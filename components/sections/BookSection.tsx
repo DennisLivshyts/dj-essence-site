@@ -32,8 +32,8 @@ export default function BookSection() {
           Request received — DJ Essence will be in touch shortly.
         </div>
         <div className="direct">
-          <div>CALL / TEXT<b>916.910.4684</b></div>
-          <div>INSTAGRAM<b>@djessence_official</b></div>
+          <div>CALL / TEXT<b><a href="tel:9169104684" style={{ color: 'inherit', textDecoration: 'none' }}>916.910.4684</a></b></div>
+          <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>@djessence_official</a></b></div>
         </div>
       </div>
     )
@@ -81,7 +81,7 @@ export default function BookSection() {
         </div>
         {status === 'error' && (
           <p style={{ color: 'var(--magenta)', fontFamily: 'var(--f-mono)', fontSize: 11 }}>
-            Something went wrong — call or text directly: 916.910.4684
+            Something went wrong — <a href="tel:9169104684" style={{ color: 'inherit' }}>call or text directly: 916.910.4684</a>
           </p>
         )}
         <button type="submit" className="submit-btn" disabled={status === 'loading'}>
@@ -90,8 +90,8 @@ export default function BookSection() {
         </button>
       </form>
       <div className="direct">
-        <div>CALL / TEXT<b>916.910.4684</b></div>
-        <div>INSTAGRAM<b>@djessence_official</b></div>
+        <div>CALL / TEXT<b><a href="tel:9169104684" style={{ color: 'inherit', textDecoration: 'none' }}>916.910.4684</a></b></div>
+        <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>@djessence_official</a></b></div>
       </div>
     </div>
   )

@@ -24,10 +24,13 @@ const SECTIONS = [
 const N = SECTIONS.length
 
 export default function DJEssenceApp() {
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const [theme, setTheme] = useState('dark')
-  const [preloaderDone, setPreloaderDone] = useState(false)
-  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const [scrollProgress, setScrollProgress]       = useState(0)
+  const [theme, setTheme]                         = useState('dark')
+  const [preloaderDone, setPreloaderDone]         = useState(false)
+  const [tilt, setTilt]                           = useState({ x: 0, y: 0 })
+  const [isMobile, setIsMobile]                   = useState(false)
+  const [mobileActiveIdx, setMobileActiveIdx]     = useState(0)
+  const [mobileVinylRot, setMobileVinylRot]       = useState(0)
 
   const rafRef        = useRef<number | null>(null)
   const tiltRafRef    = useRef<number | null>(null)
@@ -41,22 +44,27 @@ export default function DJEssenceApp() {
   const decayRafRef   = useRef<number | null>(null)
   const lastScrollY   = useRef(0)
 
+  // Mobile detection via matchMedia
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 820px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  // Scroll → record rotation + spin energy for lighting
+  // Scroll → record rotation + sweep energy (desktop)
   useEffect(() => {
     lastScrollY.current = window.scrollY
 
-    // Decay loop: runs every frame while energy > 0.
-    // Sweeps are rotated here via direct style.transform — no CSS animation-duration recalc.
-    // --se is set once per frame and only drives opacity on a small set of elements.
     const decay = () => {
       energyRef.current *= 0.975
       const se = energyRef.current
 
-      // Rotate sweeps directly — GPU-composited transform, zero recalc cost
       sweep1Angle.current = (sweep1Angle.current + 0.06 + 1.2 * se) % 360
       sweep2Angle.current = (sweep2Angle.current - 0.05 - 0.9 * se + 720) % 360
       if (sweep1Ref.current) {
@@ -67,7 +75,6 @@ export default function DJEssenceApp() {
         sweep2Ref.current.style.opacity = Math.min(1, Math.max(0, (se - 0.25) * 2)).toFixed(3)
       }
 
-      // --se drives only opacity on orbs/floor and brightness on tiny disco dots
       atmosRef.current?.style.setProperty('--se', se.toFixed(3))
 
       if (se > 0.005) {
@@ -87,13 +94,11 @@ export default function DJEssenceApp() {
         const max = document.documentElement.scrollHeight - window.innerHeight
         setScrollProgress(max > 0 ? window.scrollY / max : 0)
 
-        // Accumulate energy from scroll delta; continuous scrolling builds it up toward 1
         const prev = lastScrollY.current
         lastScrollY.current = window.scrollY
         const delta = Math.abs(window.scrollY - prev)
         energyRef.current = Math.min(1, energyRef.current + delta * 0.0009)
 
-        // Kick off decay loop if not already running
         if (!decayRafRef.current && energyRef.current > 0) {
           decayRafRef.current = requestAnimationFrame(decay)
         }
@@ -109,7 +114,39 @@ export default function DJEssenceApp() {
     }
   }, [])
 
-  // Mouse → vinyl parallax tilt
+  // Mobile swipe-to-navigate — ignores swipes that start inside the panel
+  useEffect(() => {
+    if (!isMobile) return
+
+    let startY = 0
+    let startedInPanel = false
+
+    const onTouchStart = (e: TouchEvent) => {
+      startedInPanel = !!(e.target as Element).closest?.('.panel-glass')
+      startY = e.touches[0].clientY
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (startedInPanel) return
+      const deltaY = startY - e.changedTouches[0].clientY
+      if (Math.abs(deltaY) > 44) {
+        if (deltaY > 0) {
+          setMobileActiveIdx(prev => Math.min(N - 1, prev + 1))
+        } else {
+          setMobileActiveIdx(prev => Math.max(0, prev - 1))
+        }
+        setMobileVinylRot(r => r + 240)
+      }
+    }
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchend',   onTouchEnd,   { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchend',   onTouchEnd)
+    }
+  }, [isMobile])
+
+  // Mouse → vinyl parallax tilt (desktop only)
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       tiltTarget.current = {
@@ -132,18 +169,25 @@ export default function DJEssenceApp() {
     }
   }, [])
 
-  const activeIdx     = Math.min(N - 1, Math.round(scrollProgress * (N - 1)))
-  const recordRotation = scrollProgress * 540
-  const current       = SECTIONS[activeIdx]
+  const desktopActiveIdx = Math.min(N - 1, Math.round(scrollProgress * (N - 1)))
+  const activeIdx        = isMobile ? mobileActiveIdx : desktopActiveIdx
+  const recordRotation   = isMobile ? mobileVinylRot  : scrollProgress * 540
+  const current          = SECTIONS[activeIdx]
 
   const goTo = (i: number) => {
+    if (isMobile) {
+      setMobileActiveIdx(i)
+      setMobileVinylRot(r => r + 240)
+      return
+    }
     const max = document.documentElement.scrollHeight - window.innerHeight
     window.scrollTo({ top: (i / (N - 1)) * max, behavior: 'smooth' })
   }
 
   return (
     <>
-      <div className="scroll-driver" aria-hidden />
+      {/* height: 0 on mobile suppresses outer-scroll; CSS fallback also sets this */}
+      <div className="scroll-driver" aria-hidden style={isMobile ? { height: 0 } : undefined} />
 
       <div className="site-viewport">
 
@@ -163,26 +207,28 @@ export default function DJEssenceApp() {
           <div className="va-disco va-d6" />
           <div className="va-disco va-d7" />
           <div className="va-disco va-d8" />
-          <div className="va-disco va-d9" />
-          <div className="va-disco va-d10" />
-          <div className="va-disco va-d11" />
-          <div className="va-disco va-d12" />
-          <div className="va-disco va-d13" />
-          <div className="va-disco va-d14" />
-          <div className="va-disco va-d15" />
-          <div className="va-disco va-d16" />
+          {!isMobile && <>
+            <div className="va-disco va-d9" />
+            <div className="va-disco va-d10" />
+            <div className="va-disco va-d11" />
+            <div className="va-disco va-d12" />
+            <div className="va-disco va-d13" />
+            <div className="va-disco va-d14" />
+            <div className="va-disco va-d15" />
+            <div className="va-disco va-d16" />
+          </>}
         </div>
 
-        {/* Spinning vinyl — perspective set on stage, tilt on wrapper, rotation on vinyl */}
+        {/* Spinning vinyl — perspective on stage, tilt on wrapper, rotation on vinyl */}
         <div className="vinyl-stage">
           <div
             className="vinyl-tilt"
-            style={{
+            style={isMobile ? undefined : {
               transform: `rotateX(${-tilt.y * 5}deg) rotateY(${tilt.x * 5}deg)`,
             }}
           >
             <div
-              className="vinyl"
+              className={`vinyl${isMobile ? ' vinyl--mobile' : ''}`}
               style={{ transform: `rotate(${recordRotation}deg)` }}
             >
               <div className="grooves" />
@@ -205,8 +251,8 @@ export default function DJEssenceApp() {
               key={s.id}
               className={`panel-slot${i === activeIdx ? ' is-active' : ''}`}
               style={{
-                opacity:   i === activeIdx ? 1 : 0,
-                transform: i === activeIdx ? 'translateY(0)' : 'translateY(16px)',
+                opacity:    i === activeIdx ? 1 : 0,
+                transform:  i === activeIdx ? 'translateY(0)' : 'translateY(16px)',
                 transition: 'opacity 350ms ease, transform 350ms ease',
               }}
             >
@@ -221,6 +267,21 @@ export default function DJEssenceApp() {
             </div>
           ))}
         </div>
+
+        {/* Mobile section position dots */}
+        {isMobile && (
+          <div className="mobile-nav-dots" aria-label="Section navigation">
+            {SECTIONS.map((s, i) => (
+              <button
+                key={s.id}
+                className={`mobile-nav-dot${i === activeIdx ? ' active' : ''}`}
+                style={i === activeIdx ? { background: s.color } : undefined}
+                onClick={() => goTo(i)}
+                aria-label={`Go to ${s.label}`}
+              />
+            ))}
+          </div>
+        )}
 
         <div className="tonearm">
           <div className="arm">

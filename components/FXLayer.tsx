@@ -9,10 +9,19 @@ export default function FXLayer() {
   const [ripples, setRipples] = useState<Ripple[]>([])
   const [trails,  setTrails]  = useState<Trail[]>([])
   const [cursor,  setCursor]  = useState({ x: -100, y: -100, active: false })
-  const idRef       = useRef(0)
+  const [isTouch, setIsTouch] = useState(false)
+  const idRef        = useRef(0)
   const lastTrailRef = useRef(0)
 
   useEffect(() => {
+    const onTouch = () => setIsTouch(true)
+    window.addEventListener('touchstart', onTouch, { once: true, passive: true })
+    return () => window.removeEventListener('touchstart', onTouch)
+  }, [])
+
+  useEffect(() => {
+    if (isTouch) return
+
     const onMove = (e: MouseEvent) => {
       setCursor(c => ({ ...c, x: e.clientX, y: e.clientY }))
       const now = performance.now()
@@ -47,7 +56,9 @@ export default function FXLayer() {
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('mouseup',   onUp)
     }
-  }, [])
+  }, [isTouch])
+
+  if (isTouch) return null
 
   return (
     <div id="fx-layer">

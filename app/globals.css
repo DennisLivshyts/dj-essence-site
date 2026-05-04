@@ -1204,18 +1204,224 @@ body::after {
   100% { opacity: 0;   transform: translate(-50%,-50%) scale(1.8); }
 }
 
+/* ========== MOBILE NAV HAMBURGER ========== */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px; height: 44px;
+  padding: 10px;
+  background: none; border: none;
+}
+.nav-hamburger span {
+  display: block;
+  width: 22px; height: 2px;
+  background: var(--ink);
+  border-radius: 1px;
+  transition: transform 220ms ease, opacity 220ms ease;
+  transform-origin: center;
+}
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ========== MOBILE MENU OVERLAY ========== */
+.mobile-menu {
+  display: none; /* flex on mobile via media query */
+  position: fixed; inset: 0;
+  background: rgba(10,10,10,0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 79; /* behind nav (80) so hamburger stays tappable */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 32px 48px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+[data-theme="light"] .mobile-menu { background: rgba(240,235,224,0.97); }
+.mobile-menu.open { opacity: 1; pointer-events: auto; }
+
+.mobile-menu-inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.mobile-menu-item {
+  width: 100%;
+  background: none; border: none;
+  text-align: left;
+  padding: 14px 0;
+  font-family: var(--f-display);
+  font-size: clamp(28px, 9vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--line);
+  transition: color 160ms;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.mobile-menu-item:active,
+.mobile-menu-item.active { color: var(--section-color, var(--acid)); }
+.mobile-menu-num {
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: 0.2em;
+  color: var(--ink-faint); font-weight: 400;
+  min-width: 26px;
+}
+.mobile-menu-book {
+  width: 100%; margin-top: 28px;
+  background: var(--acid); color: #0a0a0a;
+  border: none; padding: 16px 20px;
+  font-family: var(--f-mono); font-size: 13px;
+  font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; cursor: pointer;
+  text-align: center;
+}
+
+/* ========== MOBILE NAV DOTS ========== */
+.mobile-nav-dots {
+  display: none;
+  position: fixed;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+  gap: 8px;
+  z-index: 30;
+}
+.mobile-nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  border: none; padding: 0;
+  cursor: pointer;
+  transition: background 300ms, transform 300ms;
+}
+.mobile-nav-dot.active { transform: scale(1.8); }
+
+/* Mobile vinyl — smooth spin burst on section change */
+.vinyl--mobile {
+  transition: transform 650ms cubic-bezier(0.22, 0, 0.15, 1);
+}
+
 /* ========== RESPONSIVE ========== */
+@media (pointer: coarse) {
+  html, body { cursor: auto; }
+}
+
 @media (max-width: 820px) {
+  /* Nav — hide links, show hamburger */
   .nav ul { display: none; }
   .nav { padding: 14px 20px; }
-  .vinyl-tilt { width: 280vmin; height: 280vmin; }
-  .panel-overlay { width: 90vw; }
-  .panel-glass { padding: 24px 20px; }
-  .panel-gallery .gallery-grid { grid-template-columns: repeat(3, 1fr); }
-  .panel-reviews .quotes { grid-template-columns: 1fr; }
-  .panel-book .two { grid-template-columns: 1fr; }
+  .nav .book-btn { display: none; }
+  .nav-hamburger { display: flex; cursor: pointer; }
+
+  /* Enable mobile menu and dots */
+  .mobile-menu { display: flex; }
+  .mobile-nav-dots { display: flex; }
+
+  /* Suppress outer scroll on mobile */
+  .scroll-driver { height: 0 !important; }
+  .site-viewport { touch-action: none; }
+  .panel-glass { touch-action: pan-y; }
+
+  /* Vinyl — correct size (was accidentally 280vmin, bigger than desktop) */
+  .vinyl-tilt { width: 200vmin; height: 200vmin; }
+
+  /* Panel — bottom-sheet layout */
+  .panel-overlay {
+    top: auto;
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    transform: none;
+  }
+  .panel-glass {
+    height: 55vh;
+    max-height: 55vh;
+    border: none;
+    border-top: 1px solid var(--line-strong);
+    border-radius: 16px 16px 0 0;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 8px 20px 24px;
+    box-shadow: 0 -12px 48px rgba(0,0,0,0.5);
+  }
+  /* Drag handle */
+  .panel-glass::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: var(--ink-faint);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+  }
+  [data-theme="light"] .panel-glass { background: rgba(240,235,224,0.92); }
+
+  /* Hide inactive slots; animate active one in */
+  .panel-slot { display: none !important; }
+  .panel-slot.is-active {
+    display: block !important;
+    animation: panel-slide-up 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes panel-slide-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Typography */
   .panel h1 { font-size: clamp(34px, 10vw, 56px); }
   .panel h2 { font-size: clamp(28px, 8vw, 48px); }
+
+  /* Chrome that doesn't translate to mobile */
   .vu-meter { display: none; }
   .tonearm { display: none; }
+  .side-hud { display: none; }
+  .scroll-hint { display: none; }
+
+  /* Performance — reduce blur cost on mobile GPUs */
+  .va-orb { filter: blur(36px); }
+
+  /* Services — horizontal scroll rows instead of stacked cards */
+  .svc-included-grid {
+    display: flex; flex-direction: row;
+    overflow-x: auto; gap: 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -20px;
+    padding: 0 20px 4px;
+    touch-action: pan-x;
+  }
+  .svc-included-grid::-webkit-scrollbar { display: none; }
+  .svc-card { min-width: 72vw; flex-shrink: 0; scroll-snap-align: start; }
+
+  .svc-addon-grid {
+    display: flex; flex-direction: row;
+    overflow-x: auto; gap: 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -20px;
+    padding: 0 20px 4px;
+    touch-action: pan-x;
+  }
+  .svc-addon-grid::-webkit-scrollbar { display: none; }
+  .svc-addon { min-width: 65vw; flex-shrink: 0; scroll-snap-align: start; }
+
+  /* Gallery */
+  .panel-gallery .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Reviews */
+  .panel-reviews .quotes { grid-template-columns: 1fr; }
+
+  /* Book form */
+  .panel-book .two { grid-template-columns: 1fr; }
 }
