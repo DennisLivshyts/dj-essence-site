@@ -114,19 +114,36 @@ export default function DJEssenceApp() {
     }
   }, [])
 
-  // Mobile swipe-to-navigate — ignores swipes that start inside the panel
+  // Mobile swipe-to-navigate with pull-to-refresh prevention
   useEffect(() => {
     if (!isMobile) return
 
     let startY = 0
+    let startX = 0
     let startedInPanel = false
+    let gestureIsHorizontal: boolean | null = null
 
     const onTouchStart = (e: TouchEvent) => {
       startedInPanel = !!(e.target as Element).closest?.('.panel-glass')
       startY = e.touches[0].clientY
+      startX = e.touches[0].clientX
+      gestureIsHorizontal = null
     }
-    const onTouchEnd = (e: TouchEvent) => {
+
+    const onTouchMove = (e: TouchEvent) => {
       if (startedInPanel) return
+      // Resolve direction on first meaningful movement
+      if (gestureIsHorizontal === null) {
+        const dy = Math.abs(e.touches[0].clientY - startY)
+        const dx = Math.abs(e.touches[0].clientX - startX)
+        if (dy > 4 || dx > 4) gestureIsHorizontal = dx > dy
+      }
+      // Block browser pull-to-refresh / native scroll for vertical swipes only
+      if (gestureIsHorizontal === false) e.preventDefault()
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (startedInPanel || gestureIsHorizontal) return
       const deltaY = startY - e.changedTouches[0].clientY
       if (Math.abs(deltaY) > 44) {
         if (deltaY > 0) {
@@ -138,10 +155,13 @@ export default function DJEssenceApp() {
       }
     }
 
+    // passive: false on touchmove so preventDefault() is allowed
     window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove',  onTouchMove,  { passive: false })
     window.addEventListener('touchend',   onTouchEnd,   { passive: true })
     return () => {
       window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove',  onTouchMove)
       window.removeEventListener('touchend',   onTouchEnd)
     }
   }, [isMobile])
@@ -268,18 +288,40 @@ export default function DJEssenceApp() {
           ))}
         </div>
 
-        {/* Mobile section position dots */}
+        {/* Mobile deck transport — prev/next controls + section readout */}
         {isMobile && (
-          <div className="mobile-nav-dots" aria-label="Section navigation">
-            {SECTIONS.map((s, i) => (
-              <button
-                key={s.id}
-                className={`mobile-nav-dot${i === activeIdx ? ' active' : ''}`}
-                style={i === activeIdx ? { background: s.color } : undefined}
-                onClick={() => goTo(i)}
-                aria-label={`Go to ${s.label}`}
-              />
-            ))}
+          <div className="mobile-transport">
+            <button
+              className="mobile-transport-btn"
+              onClick={() => goTo(Math.max(0, activeIdx - 1))}
+              disabled={activeIdx === 0}
+              aria-label="Previous section"
+            >
+              ◀
+            </button>
+            <div className="mobile-transport-center">
+              <div className="mobile-transport-dots">
+                {SECTIONS.map((s, i) => (
+                  <span
+                    key={s.id}
+                    className={`mobile-transport-dot${i === activeIdx ? ' active' : ''}`}
+                    style={i === activeIdx ? { background: s.color } : undefined}
+                    onClick={() => goTo(i)}
+                  />
+                ))}
+              </div>
+              <div className="mobile-transport-label" style={{ color: current.color }}>
+                {String(activeIdx + 1).padStart(2, '0')} — {current.label.toUpperCase()}
+              </div>
+            </div>
+            <button
+              className="mobile-transport-btn"
+              onClick={() => goTo(Math.min(N - 1, activeIdx + 1))}
+              disabled={activeIdx === N - 1}
+              aria-label="Next section"
+            >
+              ▶
+            </button>
           </div>
         )}
 
