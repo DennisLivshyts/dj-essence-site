@@ -5,6 +5,7 @@ import Nav from '@/components/Nav'
 import Preloader from '@/components/Preloader'
 import FXLayer from '@/components/FXLayer'
 import VuMeter from '@/components/VuMeter'
+import StatsMarquee from '@/components/StatsMarquee'
 import HomeSection    from '@/components/sections/HomeSection'
 import AboutSection   from '@/components/sections/AboutSection'
 import ServicesSection from '@/components/sections/ServicesSection'
@@ -249,7 +250,7 @@ export default function DJEssenceApp() {
               <div key={s.id} className="mobile-section">
                 <div className="mobile-content">
                   {s.id === 'home'     && <HomeSection goTo={goTo} />}
-                  {s.id === 'about'    && <AboutSection />}
+                  {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
                   {s.id === 'services' && <ServicesSection />}
                   {s.id === 'gallery'  && <GallerySection />}
                   {s.id === 'reviews'  && <ReviewsSection />}
@@ -275,7 +276,7 @@ export default function DJEssenceApp() {
               >
                 <div className="panel-glass">
                   {s.id === 'home'     && <HomeSection goTo={goTo} />}
-                  {s.id === 'about'    && <AboutSection />}
+                  {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
                   {s.id === 'services' && <ServicesSection />}
                   {s.id === 'gallery'  && <GallerySection />}
                   {s.id === 'reviews'  && <ReviewsSection />}
@@ -291,6 +292,8 @@ export default function DJEssenceApp() {
             <div className="head"><div className="needle" /></div>
           </div>
         </div>
+
+        <StatsMarquee />
 
         <Nav activeIdx={activeIdx} goTo={goTo} theme={theme} setTheme={setTheme} />
 

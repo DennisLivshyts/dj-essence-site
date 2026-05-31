@@ -1,4 +1,35 @@
-export default function AboutSection() {
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+
+interface Props { isActive: boolean }
+
+const TARGETS = [5000, 20, 50]
+const DURATION = 1400
+
+function fmt(i: number, n: number): string {
+  if (i === 0) return n >= 5000 ? '5K+' : n.toLocaleString()
+  if (i === 1) return `${n}+`
+  return `${n}`
+}
+
+export default function AboutSection({ isActive }: Props) {
+  const [counts, setCounts] = useState([0, 0, 0])
+  const hasRun = useRef(false)
+
+  useEffect(() => {
+    if (!isActive || hasRun.current) return
+    hasRun.current = true
+    const start = performance.now()
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / DURATION)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setCounts(TARGETS.map(target => Math.round(eased * target)))
+      if (t < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [isActive])
+
   return (
     <div className="panel panel-about">
       <img src="/djEssenceSymbol.png" alt="" className="panel-watermark" />
@@ -16,18 +47,12 @@ export default function AboutSection() {
         Check out <b>@djessence_official</b> on Instagram for real event highlights.
       </p>
       <div className="stat-row">
-        <div className="stat">
-          <div className="n">5K+</div>
-          <div className="l">Events Worked</div>
-        </div>
-        <div className="stat">
-          <div className="n">20+</div>
-          <div className="l">Years on Decks</div>
-        </div>
-        <div className="stat">
-          <div className="n">50</div>
-          <div className="l">States + Mexico</div>
-        </div>
+        {TARGETS.map((_, i) => (
+          <div key={i} className="stat">
+            <div className="n">{fmt(i, counts[i])}</div>
+            <div className="l">{['Events Worked', 'Years on Decks', 'States + Mexico'][i]}</div>
+          </div>
+        ))}
       </div>
     </div>
   )

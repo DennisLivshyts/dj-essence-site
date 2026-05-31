@@ -1,6 +1,47 @@
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 
+// ── Rate limiting ────────────────────────────────────────────────────────────
+// In-memory store: works per warm serverless instance. Sufficient for a
+// low-traffic booking form; upgrade to Upstash Redis if multi-instance needed.
+const rateMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT  = 5
+const RATE_WINDOW = 10 * 60 * 1000 // 10 minutes
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
+    return true
+  }
+  if (entry.count >= RATE_LIMIT) return false
+  entry.count++
+  return true
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const MAX_BODY_BYTES = 8_000  // 8 KB
+
+const FIELD_LIMITS: Record<string, number> = {
+  name:      100,
+  email:     254,
+  phone:      20,
+  eventDate:  10,
+  eventType:  40,
+  venue:     200,
+  message:  2_000,
+}
+
+const ALLOWED_EVENT_TYPES = new Set([
+  'Wedding',
+  'Quinceañera',
+  'Birthday / Private',
+  'Corporate',
+  'Club / Concert',
+])
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -10,7 +51,7 @@ const transporter = nodemailer.createTransport({
 })
 
 function isValidEmail(e: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 }
 
 function isValidPhone(p: string) {
@@ -18,6 +59,7 @@ function isValidPhone(p: string) {
 }
 
 function isValidDate(d: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false
   const date = new Date(d)
   if (isNaN(date.getTime())) return false
   const today = new Date()
@@ -31,8 +73,19 @@ function fmt(d: string) {
   })
 }
 
+// HTML-escape for email body
 function esc(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
+// Safe string for email header fields (strip CR/LF/quotes to prevent injection)
+function escHeader(s: string) {
+  return s.replace(/[\r\n"]/g, ' ').trim()
 }
 
 function buildEmailHtml(data: {
@@ -57,9 +110,9 @@ function buildEmailHtml(data: {
     <table style="width:100%;border-collapse:collapse;background:#111;border-radius:8px;overflow:hidden;border:1px solid #1a1a1a;">
       ${row('Name', esc(name))}
       ${row('Email', `<a href="mailto:${esc(email)}" style="color:#00ff88;text-decoration:none;">${esc(email)}</a>`)}
-      ${row('Phone', `<a href="tel:${esc(phone)}" style="color:#00ff88;text-decoration:none;">${esc(phone)}</a>`)}
+      ${row('Phone', `<a href="tel:${esc(phone.replace(/[^\d\s\-+().]/g, ''))}" style="color:#00ff88;text-decoration:none;">${esc(phone)}</a>`)}
       ${row('Event Type', esc(eventType))}
-      ${row('Event Date', fmt(eventDate))}
+      ${row('Event Date', esc(fmt(eventDate)))}
       ${row('Venue / City', esc(venue))}
       ${message.trim() ? row('Message', esc(message)) : ''}
     </table>
@@ -72,41 +125,97 @@ function buildEmailHtml(data: {
 </html>`
 }
 
+// ── Handler ───────────────────────────────────────────────────────────────────
 export async function POST(request: Request) {
-  let body: Record<string, string>
+  // Rate limiting
+  const ip = (
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  )
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: 'Too many requests — please wait before submitting again.' },
+      { status: 429 }
+    )
+  }
+
+  // Payload size guard
+  let text: string
   try {
-    body = await request.json()
+    text = await request.text()
+  } catch {
+    return NextResponse.json({ error: 'Bad request' }, { status: 400 })
+  }
+  if (text.length > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+  }
+
+  // JSON parse
+  let body: Record<string, unknown>
+  try {
+    body = JSON.parse(text)
   } catch {
     return NextResponse.json({ error: 'Bad request' }, { status: 400 })
   }
 
-  const {
-    name = '', email = '', phone = '',
-    eventDate = '', eventType = '', venue = '', message = '',
-  } = body
+  // Extract and coerce to strings
+  const raw: Record<string, string> = {}
+  for (const key of ['name', 'email', 'phone', 'eventDate', 'eventType', 'venue', 'message']) {
+    const val = body[key]
+    if (val !== undefined && typeof val !== 'string') {
+      return NextResponse.json({ error: 'Bad request' }, { status: 400 })
+    }
+    raw[key] = typeof val === 'string' ? val : ''
+  }
 
+  // Field length caps
+  for (const [field, limit] of Object.entries(FIELD_LIMITS)) {
+    if (raw[field].length > limit) {
+      return NextResponse.json(
+        { errors: { [field]: `Too long (max ${limit} characters)` } },
+        { status: 422 }
+      )
+    }
+  }
+
+  const { name, email, phone, eventDate, eventType, venue, message } = raw
+
+  // Semantic validation
   const errors: Record<string, string> = {}
-  if (!name.trim()) errors.name = 'Required'
-  if (!email.trim()) errors.email = 'Required'
-  else if (!isValidEmail(email)) errors.email = 'Invalid email'
-  if (!phone.trim()) errors.phone = 'Required'
-  else if (!isValidPhone(phone)) errors.phone = 'Invalid phone number'
-  if (!eventDate.trim()) errors.eventDate = 'Required'
-  else if (!isValidDate(eventDate)) errors.eventDate = 'Must be a future date'
-  if (!eventType.trim()) errors.eventType = 'Required'
-  if (!venue.trim()) errors.venue = 'Required'
+  if (!name.trim())       errors.name      = 'Required'
+  if (!email.trim())      errors.email     = 'Required'
+  else if (!isValidEmail(email.trim())) errors.email = 'Invalid email'
+  if (!phone.trim())      errors.phone     = 'Required'
+  else if (!isValidPhone(phone))        errors.phone = 'Invalid phone number'
+  if (!eventDate.trim())  errors.eventDate = 'Required'
+  else if (!isValidDate(eventDate.trim())) errors.eventDate = 'Must be a future date'
+  if (!eventType.trim())  errors.eventType = 'Required'
+  else if (!ALLOWED_EVENT_TYPES.has(eventType.trim())) errors.eventType = 'Invalid event type'
+  if (!venue.trim())      errors.venue     = 'Required'
 
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ errors }, { status: 422 })
   }
 
+  // Trim everything before use
+  const clean = {
+    name:      name.trim(),
+    email:     email.trim(),
+    phone:     phone.trim(),
+    eventDate: eventDate.trim(),
+    eventType: eventType.trim(),
+    venue:     venue.trim(),
+    message:   message.trim(),
+  }
+
   try {
     await transporter.sendMail({
-      from: `"${name.trim()} via DJEssence.com" <${process.env.GMAIL_USER}>`,
+      from: `"${escHeader(clean.name)} via DJEssence.com" <${process.env.GMAIL_USER}>`,
       to: 'djessence916@gmail.com',
-      replyTo: email.trim(),
-      subject: `Booking Request — ${eventType} · ${fmt(eventDate)}`,
-      html: buildEmailHtml({ name, email, phone, eventDate, eventType, venue, message }),
+      replyTo: clean.email,
+      subject: `Booking Request — ${escHeader(clean.eventType)} · ${fmt(clean.eventDate)}`,
+      html: buildEmailHtml(clean),
     })
   } catch (err) {
     console.error('Mail error:', err)
