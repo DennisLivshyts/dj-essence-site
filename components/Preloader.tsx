@@ -32,8 +32,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
           <div className="pre-grooves" />
           <div className="pre-sheen" />
           <div className="pre-label">
-            <b>Essence</b>
-            <span>Sacramento, CA</span>
+            <img src="/djEssenceSymbol.png" alt="" className="vinyl-label-symbol" />
           </div>
         </div>
 

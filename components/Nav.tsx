@@ -30,8 +30,7 @@ export default function Nav({ activeIdx, goTo, theme, setTheme }: Props) {
     <>
       <nav className="nav">
         <button className="brand" onClick={() => handleGoTo(0)}>
-          <span className="dot" />
-          DJ ESSENCE
+          <img src="/djEssence.PNG" alt="DJ Essence" className="brand-logo" />
         </button>
         <ul>
           {SECTIONS.map((s, i) => (

@@ -1,6 +1,7 @@
 export default function AboutSection() {
   return (
     <div className="panel panel-about">
+      <img src="/djEssenceSymbol.png" alt="" className="panel-watermark" />
       <div className="eyebrow">02 · About</div>
       <h2>The <em>essence</em> of every great night.</h2>
       <p>

@@ -235,8 +235,8 @@ export default function DJEssenceApp() {
               <div className="grooves" />
               <div className="light-sheen" />
               <div className="center-label" style={{ background: current.color }}>
-                <b>Essence</b>
-                <span>{current.sub}</span>
+                <img src="/djEssenceSymbol.png" alt="" className="vinyl-label-symbol" />
+                <span className="vinyl-label-sub">{current.sub}</span>
               </div>
             </div>
           </div>

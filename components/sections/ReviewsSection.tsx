@@ -8,6 +8,7 @@ const QUOTES = [
 export default function ReviewsSection() {
   return (
     <div className="panel panel-reviews">
+      <img src="/djEssenceSymbol.png" alt="" className="panel-watermark" />
       <div className="eyebrow">05 · Reviews</div>
       <h2>What they <em>say.</em></h2>
       <div className="quotes">
