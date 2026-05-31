@@ -25,7 +25,7 @@ const N = SECTIONS.length
 
 export default function DJEssenceApp() {
   const [scrollProgress, setScrollProgress]   = useState(0)
-  const [theme, setTheme]                     = useState('dark')
+  const [theme, setTheme]                     = useState('light')
   const [preloaderDone, setPreloaderDone]     = useState(false)
   const [tilt, setTilt]                       = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile]               = useState(false)
@@ -307,9 +307,7 @@ export default function DJEssenceApp() {
             <VuMeter />
             <div className="scroll-hint" style={{ opacity: scrollProgress > 0.04 ? 0 : 1 }}>
               <div className="scroll-hint-label">Scroll to spin</div>
-              <div className="scroll-hint-wheel">
-                <div className="scroll-hint-dot" />
-              </div>
+              <div className="scroll-hint-arrow">↓</div>
             </div>
           </>
         )}
