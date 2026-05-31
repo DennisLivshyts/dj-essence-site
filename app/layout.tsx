@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk, JetBrains_Mono, Bricolage_Grotesque } from 'next/font/google'
 import './globals.css'
 
@@ -19,6 +19,11 @@ const bricolageGrotesque = Bricolage_Grotesque({
   variable: '--font-bricolage',
   display: 'swap',
 })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata: Metadata = {
   title: 'DJ Essence — Weddings · Clubs · Concerts',
