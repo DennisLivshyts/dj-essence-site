@@ -740,6 +740,20 @@ body::after {
 .gallery-tile.f { grid-column: span 2; grid-row: span 1;
   background: repeating-linear-gradient(150deg, var(--bg-3) 0 6px, var(--bg-2) 6px 12px); }
 
+a.gallery-tile { text-decoration: none; }
+.gallery-tile img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.gallery-play {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0; transition: opacity 200ms;
+}
+.gallery-tile:hover .gallery-play { opacity: 1; }
+
 /* REVIEWS */
 .panel-reviews .quotes {
   display: grid;
@@ -793,6 +807,14 @@ body::after {
   padding: 2px 0; resize: none; cursor: none;
 }
 .panel-book .field select option { background: var(--bg-2); color: var(--ink); }
+.field-error {
+  font-family: var(--f-mono); font-size: 9px;
+  color: var(--magenta); letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+.panel-book .field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6); cursor: pointer;
+}
 .panel-book .submit-btn {
   margin-top: 6px;
   background: var(--acid); color: #0a0a0a;
