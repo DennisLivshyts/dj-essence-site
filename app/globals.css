@@ -1605,10 +1605,13 @@ a.gallery-tile { text-decoration: none; }
     width: clamp(300px, 36vw, 500px);
   }
 
-  /* Slightly more vertical room since it's no longer a centered modal */
+  /* No inner scrollbar — page scroll drives panel content via JS */
   .panel-glass {
-    max-height: 82vh;
+    max-height: 84vh;
+    overflow: hidden;
+    scrollbar-width: none;
   }
+  .panel-glass::-webkit-scrollbar { display: none; }
 
   /* Services: 2-col keeps cards readable at the narrower panel width */
   .svc-included-grid,

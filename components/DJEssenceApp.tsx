@@ -30,6 +30,7 @@ export default function DJEssenceApp() {
   const [preloaderDone, setPreloaderDone]     = useState(false)
   const [tilt, setTilt]                       = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile]               = useState(false)
+  const [isLaptop, setIsLaptop]               = useState(false)
   const [mobileActiveIdx, setMobileActiveIdx] = useState(0)
 
   const rafRef          = useRef<number | null>(null)
@@ -46,12 +47,28 @@ export default function DJEssenceApp() {
   const mobileScrollRef = useRef<HTMLDivElement>(null)
   const mobileVinylRef  = useRef<HTMLDivElement>(null)
   const lastMobileTop   = useRef(0)
+  // Ref-driven so scroll handler (empty-dep effect) always sees current value
+  const isLaptopRef     = useRef(false)
+  const panelGlassRefs  = useRef<(HTMLDivElement | null)[]>(Array(N).fill(null))
 
   // Mobile detection
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 820px)')
     setIsMobile(mq.matches)
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  // Laptop detection — also update ref so scroll handler (empty-dep effect) stays current
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1100px) and (max-height: 920px)')
+    isLaptopRef.current = mq.matches
+    setIsLaptop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => {
+      isLaptopRef.current = e.matches
+      setIsLaptop(e.matches)
+    }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
@@ -91,12 +108,27 @@ export default function DJEssenceApp() {
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null
         const max = document.documentElement.scrollHeight - window.innerHeight
-        setScrollProgress(max > 0 ? window.scrollY / max : 0)
+        const sp = max > 0 ? window.scrollY / max : 0
+        setScrollProgress(sp)
         const prev = lastScrollY.current
         lastScrollY.current = window.scrollY
         energyRef.current = Math.min(1, energyRef.current + Math.abs(window.scrollY - prev) * 0.0009)
         if (!decayRafRef.current && energyRef.current > 0)
           decayRafRef.current = requestAnimationFrame(decay)
+
+        // Laptop: page scroll drives panel-glass content scroll (no inner scrollbar needed)
+        if (isLaptopRef.current) {
+          // Each section is active in a band of scrollProgress centered on i/(N-1)
+          // Math.round(sp*(N-1)) gives the active section; its band edges are:
+          const sec = Math.min(N - 1, Math.round(sp * (N - 1)))
+          const lo  = sec === 0     ? 0 : (sec - 0.5) / (N - 1)
+          const hi  = sec === N - 1 ? 1 : (sec + 0.5) / (N - 1)
+          const localP = Math.max(0, Math.min(1, (sp - lo) / (hi - lo)))
+          const glass  = panelGlassRefs.current[sec]
+          if (glass) {
+            glass.scrollTop = localP * Math.max(0, glass.scrollHeight - glass.clientHeight)
+          }
+        }
       })
     }
 
@@ -188,7 +220,9 @@ export default function DJEssenceApp() {
 
   return (
     <>
-      <div className="scroll-driver" aria-hidden style={isMobile ? { height: 0 } : undefined} />
+      <div className="scroll-driver" aria-hidden
+        style={isMobile ? { height: 0 } : isLaptop ? { height: '1200vh' } : undefined}
+      />
 
       <div className="site-viewport">
 
@@ -274,7 +308,7 @@ export default function DJEssenceApp() {
                   transition: 'opacity 350ms ease, transform 350ms ease',
                 }}
               >
-                <div className="panel-glass">
+                <div className="panel-glass" ref={el => { panelGlassRefs.current[i] = el }}>
                   {s.id === 'home'     && <HomeSection goTo={goTo} />}
                   {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
                   {s.id === 'services' && <ServicesSection />}
