@@ -1578,6 +1578,45 @@ a.gallery-tile { text-decoration: none; }
   .panel-book .two { grid-template-columns: 1fr; }
 }
 
+/* ========== LAPTOP / MID-SCREEN (≥1100px wide, ≤920px tall): split layout ========== */
+/*
+  On a 15" laptop (1366×768 or 1440×900) the vinyl is 220vmin = 1689px — the entire
+  screen sits inside the disc, so you can't perceive it rotating. Fix: shrink to 80vmin
+  so the disc shape is visible, then shift it right so the content panel fits left.
+
+  Math (1366×768):
+    80vmin  = 614px vinyl  →  radius 307px
+    margin-left: 40vw shifts the grid-centered item so vinyl center lands at ~70% of width
+    Panel left:4% + 36vw ≈ 547px right edge  |  vinyl left edge ≈ 649px  →  102px gap ✓
+*/
+@media (min-width: 1100px) and (max-height: 920px) {
+  /* Vinyl: visible disc on the right half */
+  .vinyl-tilt {
+    width: 80vmin;
+    height: 80vmin;
+    margin-left: 40vw;
+  }
+
+  /* Panel: anchored to the left, no longer screen-centered */
+  .panel-overlay {
+    left: 4%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: clamp(300px, 36vw, 500px);
+  }
+
+  /* Slightly more vertical room since it's no longer a centered modal */
+  .panel-glass {
+    max-height: 82vh;
+  }
+
+  /* Services: 2-col keeps cards readable at the narrower panel width */
+  .svc-included-grid,
+  .svc-addon-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* ========== STATS MARQUEE ========== */
 .stats-marquee {
   position: absolute;
