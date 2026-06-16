@@ -1618,6 +1618,13 @@ a.gallery-tile { text-decoration: none; }
   .svc-addon-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  /* Side HUD: move from bottom-left (blocks panel) to over the vinyl on the right */
+  .side-hud {
+    left: 52%;
+    right: auto;
+    bottom: 52px;
+  }
 }
 
 /* ========== STATS MARQUEE ========== */

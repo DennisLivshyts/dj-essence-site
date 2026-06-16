@@ -19,6 +19,14 @@ export default function FXLayer() {
     return () => window.removeEventListener('touchstart', onTouch)
   }, [])
 
+  // When touch is detected: custom cursor is removed but CSS cursor:none is still active,
+  // which makes the cursor completely invisible. Restore native cursor.
+  useEffect(() => {
+    if (!isTouch) return
+    document.documentElement.style.cursor = 'auto'
+    document.body.style.cursor = 'auto'
+  }, [isTouch])
+
   useEffect(() => {
     if (isTouch) return
 
