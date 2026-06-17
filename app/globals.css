@@ -1619,9 +1619,10 @@ a.gallery-tile { text-decoration: none; }
     grid-template-columns: 1fr 1fr;
   }
 
-  /* Side HUD: move from bottom-left (blocks panel) to over the vinyl on the right */
+  /* Side HUD: center below the vinyl (vinyl center = 70vw, see margin-left math above) */
   .side-hud {
-    left: 52%;
+    left: 70vw;
+    transform: translateX(-50%);
     right: auto;
     bottom: 52px;
   }
