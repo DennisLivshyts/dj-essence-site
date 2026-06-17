@@ -29,36 +29,35 @@ export async function GET() {
     return NextResponse.json({ posts: [] })
   }
 
-  // Validate feedId is numeric to prevent path traversal in the URL
-  if (!/^\d+$/.test(feedId)) {
+  // Validate feedId format to prevent path traversal in the URL
+  if (!/^(\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|feed_[a-z0-9]+)$/.test(feedId)) {
     return NextResponse.json({ posts: [] })
   }
 
   try {
-    const res = await fetch(
-      `https://api.curator.io/v1/feeds/${feedId}/posts?api_key=${apiKey}&status=1&limit=12`,
-      { next: { revalidate: 3600 } }
-    )
-    if (!res.ok) throw new Error(`Curator ${res.status}`)
-    const data: CuratorResponse = await res.json()
+    const url = `https://api.curator.io/v1/feeds/${feedId}/posts?api_key=${apiKey}&limit=12`
+    const res = await fetch(url, { next: { revalidate: 3600 } })
+    const raw = await res.json()
 
-    const posts = data.posts
-      .filter(p =>
-        // Only include posts with safe, valid https URLs
-        isSafeHttpsUrl(p.image) && isSafeHttpsUrl(p.url)
-      )
+    // DEBUG — remove before deploy
+    if (!res.ok || !raw.posts?.length) {
+      return NextResponse.json({ debug: { status: res.status, feedId, raw } })
+    }
+
+    const posts = (raw as CuratorResponse).posts
+      .filter(p => isSafeHttpsUrl(p.image) && isSafeHttpsUrl(p.url))
       .map(p => ({
-        id: String(Number(p.id)),  // coerce to numeric string, reject non-numeric ids
+        id: String(Number(p.id)),
         mediaType: p.type === 'video' ? 'VIDEO' : 'IMAGE',
         mediaUrl: p.image,
         thumbnailUrl: p.type === 'video' ? p.image : undefined,
         permalink: p.url,
-        timestamp: new Date(p.created_at).toISOString(),
+        timestamp: isNaN(new Date(p.created_at).getTime()) ? new Date().toISOString() : new Date(p.created_at).toISOString(),
       }))
       .filter(p => p.id !== 'NaN')
 
     return NextResponse.json({ posts })
-  } catch {
-    return NextResponse.json({ posts: [] })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) })
   }
 }
