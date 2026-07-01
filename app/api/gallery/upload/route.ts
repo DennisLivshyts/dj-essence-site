@@ -1,30 +1,10 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { NextResponse } from 'next/server'
-
-// ── Rate limiting (mirrors app/api/booking/route.ts) ────────────────────────
-const rateMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT  = 30
-const RATE_WINDOW  = 10 * 60 * 1000 // 10 minutes
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
-    return true
-  }
-  if (entry.count >= RATE_LIMIT) return false
-  entry.count++
-  return true
-}
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { isValidGalleryPassword } from '@/lib/galleryStore'
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const ip = (
-    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    request.headers.get('x-real-ip') ||
-    'unknown'
-  )
-  if (!checkRateLimit(ip)) {
+  if (!checkRateLimit('gallery-upload', getClientIp(request), 30, 10 * 60 * 1000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -42,7 +22,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           password = undefined
         }
 
-        if (!process.env.GALLERY_UPLOAD_PASSWORD || password !== process.env.GALLERY_UPLOAD_PASSWORD) {
+        if (!isValidGalleryPassword(password)) {
           throw new Error('Unauthorized')
         }
 
