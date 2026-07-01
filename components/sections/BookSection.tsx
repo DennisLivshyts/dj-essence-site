@@ -65,7 +65,7 @@ export default function BookSection() {
   if (status === 'sent') {
     return (
       <div className="panel panel-book">
-        <div className="eyebrow">06 · Book</div>
+        <div className="eyebrow">07 · Book</div>
         <div className="success-msg">
           <span className="check">✓</span>
           Request received — DJ Essence will be in touch shortly.
@@ -82,7 +82,7 @@ export default function BookSection() {
 
   return (
     <div className="panel panel-book">
-      <div className="eyebrow">06 · Book</div>
+      <div className="eyebrow">07 · Book</div>
       <h2>Let&apos;s make it <em>epic.</em></h2>
       <form onSubmit={submit} noValidate>
         <div className="two">

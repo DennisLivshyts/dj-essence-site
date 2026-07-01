@@ -11,16 +11,25 @@ interface Post {
   timestamp: string
 }
 
+const GALLERY_COUNT = 9
+
 const PLACEHOLDERS = [
-  { cls: 'a', label: 'FIRST DANCE' },
-  { cls: 'b', label: 'CLUB · SOLD OUT' },
-  { cls: 'c', label: 'COLD SPARKS' },
-  { cls: 'd', label: 'MAIN STAGE' },
-  { cls: 'e', label: 'UP LIGHTS' },
-  { cls: 'f', label: 'ON CLOUDS' },
+  { label: 'FIRST DANCE' },
+  { label: 'CLUB · SOLD OUT' },
+  { label: 'COLD SPARKS' },
+  { label: 'MAIN STAGE' },
+  { label: 'UP LIGHTS' },
+  { label: 'ON CLOUDS' },
+  { label: 'LIVE MIX' },
+  { label: 'CROWD ENERGY' },
+  { label: 'ENCORE' },
 ]
 
-const SPANS = ['a', 'b', 'c', 'd', 'e', 'f']
+// First tile is the big "hero" (spans 2x2); the rest cycle through the remaining tile styles.
+const BG_CLASSES = ['b', 'c', 'd', 'e', 'f']
+function tileClass(i: number): string {
+  return i === 0 ? 'a' : BG_CLASSES[(i - 1) % BG_CLASSES.length]
+}
 
 function tileLabel(post: Post): string {
   const date = new Date(post.timestamp)
@@ -48,16 +57,16 @@ export default function GallerySection() {
       <div className="gallery-grid">
         {!livePosts
           ? PLACEHOLDERS.map((t, i) => (
-              <div key={i} className={`gallery-tile ${t.cls}`} data-label={t.label} />
+              <div key={i} className={`gallery-tile ${tileClass(i)}`} data-label={t.label} />
             ))
-          : posts!.slice(0, 6).map((post, i) => {
+          : posts!.slice(0, GALLERY_COUNT).map((post, i) => {
               const src = post.mediaType === 'VIDEO'
                 ? (post.thumbnailUrl ?? post.mediaUrl)
                 : post.mediaUrl
               return (
                 <a
                   key={post.id}
-                  className={`gallery-tile ${SPANS[i]}`}
+                  className={`gallery-tile ${tileClass(i)}`}
                   href={post.permalink}
                   target="_blank"
                   rel="noopener noreferrer"

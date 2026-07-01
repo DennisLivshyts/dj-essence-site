@@ -27,7 +27,7 @@ export default function HomeSection({ goTo }: Props) {
         <div>CALL / TEXT<b><a href="tel:9169104684" style={{ color: 'inherit', textDecoration: 'none' }}>916.910.4684</a></b></div>
       </div>
       <div className="cta">
-        <button className="primary" onClick={() => goTo(5)}>Book Your Date →</button>
+        <button className="primary" onClick={() => goTo(6)}>Book Your Date →</button>
         <button className="ghost"   onClick={() => goTo(2)}>See Services</button>
       </div>
     </div>

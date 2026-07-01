@@ -7,9 +7,12 @@ const SECTIONS = [
   { id: 'about',    label: 'About',    color: '#ff006e' },
   { id: 'services', label: 'Services', color: '#fbbf24' },
   { id: 'gallery',  label: 'Events',   color: '#00ff88' },
+  { id: 'photos',   label: 'Photos',   color: '#fbbf24' },
   { id: 'reviews',  label: 'Reviews',  color: '#ff006e' },
   { id: 'book',     label: 'Book',     color: '#fbbf24' },
 ]
+
+const BOOK_IDX = SECTIONS.findIndex(s => s.id === 'book')
 
 interface Props {
   activeIdx: number
@@ -41,7 +44,7 @@ export default function Nav({ activeIdx, goTo, theme, setTheme }: Props) {
             </li>
           ))}
         </ul>
-        <button className="book-btn" onClick={() => handleGoTo(5)}>BOOK NOW</button>
+        <button className="book-btn" onClick={() => handleGoTo(BOOK_IDX)}>BOOK NOW</button>
         <button
           className={`nav-hamburger${menuOpen ? ' open' : ''}`}
           onClick={() => setMenuOpen(o => !o)}
@@ -65,7 +68,7 @@ export default function Nav({ activeIdx, goTo, theme, setTheme }: Props) {
               {s.label}
             </button>
           ))}
-          <button className="mobile-menu-book" onClick={() => handleGoTo(5)}>
+          <button className="mobile-menu-book" onClick={() => handleGoTo(BOOK_IDX)}>
             Book Your Date →
           </button>
         </div>

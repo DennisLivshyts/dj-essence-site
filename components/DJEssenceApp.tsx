@@ -10,6 +10,7 @@ import HomeSection    from '@/components/sections/HomeSection'
 import AboutSection   from '@/components/sections/AboutSection'
 import ServicesSection from '@/components/sections/ServicesSection'
 import GallerySection from '@/components/sections/GallerySection'
+import PhotosSection  from '@/components/sections/PhotosSection'
 import ReviewsSection from '@/components/sections/ReviewsSection'
 import BookSection    from '@/components/sections/BookSection'
 
@@ -18,6 +19,7 @@ const SECTIONS = [
   { id: 'about',    label: 'About',    sub: 'THE DJ',      color: '#ff006e' },
   { id: 'services', label: 'Services', sub: 'PRODUCTION',  color: '#fbbf24' },
   { id: 'gallery',  label: 'Events',   sub: 'MOMENTS',     color: '#00ff88' },
+  { id: 'photos',   label: 'Photos',   sub: 'THE BOOTH',   color: '#fbbf24' },
   { id: 'reviews',  label: 'Reviews',  sub: 'CLIENT LOVE', color: '#ff006e' },
   { id: 'book',     label: 'Book',     sub: 'CONTACT',     color: '#fbbf24' },
 ]
@@ -287,6 +289,7 @@ export default function DJEssenceApp() {
                   {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
                   {s.id === 'services' && <ServicesSection />}
                   {s.id === 'gallery'  && <GallerySection />}
+                  {s.id === 'photos'   && <PhotosSection />}
                   {s.id === 'reviews'  && <ReviewsSection />}
                   {s.id === 'book'     && <BookSection />}
                 </div>
@@ -297,7 +300,7 @@ export default function DJEssenceApp() {
 
         {/* DESKTOP: floating panel overlay */}
         {!isMobile && (
-          <div className="panel-overlay">
+          <div className="panel-overlay" data-active-section={current.id}>
             {SECTIONS.map((s, i) => (
               <div
                 key={s.id}
@@ -313,6 +316,7 @@ export default function DJEssenceApp() {
                   {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
                   {s.id === 'services' && <ServicesSection />}
                   {s.id === 'gallery'  && <GallerySection />}
+                  {s.id === 'photos'   && <PhotosSection />}
                   {s.id === 'reviews'  && <ReviewsSection />}
                   {s.id === 'book'     && <BookSection />}
                 </div>
