@@ -12,6 +12,8 @@ export default function FXLayer() {
   const [isTouch, setIsTouch] = useState(false)
   const idRef        = useRef(0)
   const lastTrailRef = useRef(0)
+  const cursorRafRef = useRef<number | null>(null)
+  const cursorTarget = useRef({ x: -100, y: -100 })
 
   useEffect(() => {
     const onTouch = () => setIsTouch(true)
@@ -31,7 +33,16 @@ export default function FXLayer() {
     if (isTouch) return
 
     const onMove = (e: MouseEvent) => {
-      setCursor(c => ({ ...c, x: e.clientX, y: e.clientY }))
+      // mousemove can fire 60-120+ times/sec — batch the state update to one per
+      // animation frame instead of re-rendering on every raw event
+      cursorTarget.current = { x: e.clientX, y: e.clientY }
+      if (!cursorRafRef.current) {
+        cursorRafRef.current = requestAnimationFrame(() => {
+          cursorRafRef.current = null
+          setCursor(c => ({ ...c, x: cursorTarget.current.x, y: cursorTarget.current.y }))
+        })
+      }
+
       const now = performance.now()
       if (now - lastTrailRef.current > 24) {
         lastTrailRef.current = now
@@ -63,6 +74,7 @@ export default function FXLayer() {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('mouseup',   onUp)
+      if (cursorRafRef.current) cancelAnimationFrame(cursorRafRef.current)
     }
   }, [isTouch])
 
