@@ -44,7 +44,7 @@ export default function FXLayer() {
       }
 
       const now = performance.now()
-      if (now - lastTrailRef.current > 24) {
+      if (now - lastTrailRef.current > 40) {
         lastTrailRef.current = now
         const variant = Math.random() < 0.6 ? '' : Math.random() < 0.5 ? 'm' : 'a'
         const id = ++idRef.current
