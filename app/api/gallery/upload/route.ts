@@ -59,6 +59,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(jsonResponse)
   } catch (err) {
+    // The Blob client SDK only surfaces a generic "Failed to retrieve the client token"
+    // to the browser regardless of cause — log the real reason here so it shows up in
+    // Vercel's function logs (missing BLOB_READ_WRITE_TOKEN vs. wrong upload password, etc.)
+    console.error('Gallery upload token generation failed:', err)
     return NextResponse.json({ error: (err as Error).message }, { status: 400 })
   }
 }
