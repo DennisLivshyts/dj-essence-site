@@ -7,7 +7,7 @@ const SECTIONS = [
   { id: 'about',    label: 'About',    color: '#ff006e' },
   { id: 'services', label: 'Services', color: '#fbbf24' },
   { id: 'gallery',  label: 'Events',   color: '#00ff88' },
-  { id: 'photos',   label: 'Photos',   color: '#fbbf24' },
+  { id: 'photos',   label: 'Gallery',  color: '#fbbf24' },
   { id: 'reviews',  label: 'Reviews',  color: '#ff006e' },
   { id: 'book',     label: 'Book',     color: '#fbbf24' },
 ]

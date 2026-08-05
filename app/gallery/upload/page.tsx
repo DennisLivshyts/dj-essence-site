@@ -17,7 +17,7 @@ export default function UploadPage() {
       <div className="standalone-title">
         <div className="eyebrow">Upload</div>
         <h1>Add photos to the <em>gallery</em>.</h1>
-        <p>Upload photos from a recent event — they&apos;ll show up in the Photos section of the site right away.</p>
+        <p>Upload photos from a recent event — they&apos;ll show up in the Gallery section of the site right away.</p>
       </div>
       <UploadClientLoader />
     </div>

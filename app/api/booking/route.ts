@@ -24,21 +24,27 @@ function checkRateLimit(ip: string): boolean {
 const MAX_BODY_BYTES = 8_000  // 8 KB
 
 const FIELD_LIMITS: Record<string, number> = {
-  name:      100,
-  email:     254,
-  phone:      20,
-  eventDate:  10,
-  eventType:  40,
-  venue:     200,
-  message:  2_000,
+  name:           100,
+  email:          254,
+  phone:           20,
+  eventDate:       10,
+  eventType:       40,
+  eventTypeOther:  60,
+  venue:          200,
+  message:      2_000,
 }
 
+// Must stay in sync with EVENT_TYPES in components/sections/BookSection.tsx.
+// 'Mitzvah' and 'Other' were offered by the form but missing here, so both were
+// rejected with a 422 before reaching the inbox.
 const ALLOWED_EVENT_TYPES = new Set([
   'Wedding',
   'Quinceañera',
+  'Mitzvah',
   'Birthday / Private',
   'Corporate',
   'Club / Concert',
+  'Other',
 ])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -113,7 +119,7 @@ function buildEmailHtml(data: {
       ${row('Phone', `<a href="tel:${esc(phone.replace(/[^\d\s\-+().]/g, ''))}" style="color:#00ff88;text-decoration:none;">${esc(phone)}</a>`)}
       ${row('Event Type', esc(eventType))}
       ${row('Event Date', esc(fmt(eventDate)))}
-      ${row('Venue / City', esc(venue))}
+      ${row('Venue Address', esc(venue))}
       ${message.trim() ? row('Message', esc(message)) : ''}
     </table>
     <p style="color:#555;font-size:12px;margin-top:20px;line-height:1.6;">
@@ -161,7 +167,7 @@ export async function POST(request: Request) {
 
   // Extract and coerce to strings
   const raw: Record<string, string> = {}
-  for (const key of ['name', 'email', 'phone', 'eventDate', 'eventType', 'venue', 'message']) {
+  for (const key of ['name', 'email', 'phone', 'eventDate', 'eventType', 'eventTypeOther', 'venue', 'message']) {
     const val = body[key]
     if (val !== undefined && typeof val !== 'string') {
       return NextResponse.json({ error: 'Bad request' }, { status: 400 })
@@ -179,7 +185,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const { name, email, phone, eventDate, eventType, venue, message } = raw
+  const { name, email, phone, eventDate, eventType, eventTypeOther, venue, message } = raw
 
   // Semantic validation
   const errors: Record<string, string> = {}
@@ -192,19 +198,25 @@ export async function POST(request: Request) {
   else if (!isValidDate(eventDate.trim())) errors.eventDate = 'Must be a future date'
   if (!eventType.trim())  errors.eventType = 'Required'
   else if (!ALLOWED_EVENT_TYPES.has(eventType.trim())) errors.eventType = 'Invalid event type'
+  else if (eventType.trim() === 'Other' && !eventTypeOther.trim()) {
+    errors.eventTypeOther = 'Tell us what kind of event'
+  }
   if (!venue.trim())      errors.venue     = 'Required'
 
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ errors }, { status: 422 })
   }
 
-  // Trim everything before use
+  // Trim everything before use. For "Other", the customer's own wording replaces
+  // the literal word in the email — the free text is only trusted when the
+  // whitelisted value is actually 'Other', so it can't smuggle in a label otherwise.
+  const type = eventType.trim()
   const clean = {
     name:      name.trim(),
     email:     email.trim(),
     phone:     phone.trim(),
     eventDate: eventDate.trim(),
-    eventType: eventType.trim(),
+    eventType: type === 'Other' ? `${eventTypeOther.trim()} (Other)` : type,
     venue:     venue.trim(),
     message:   message.trim(),
   }

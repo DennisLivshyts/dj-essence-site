@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface FormState {
   name: string
@@ -8,14 +8,28 @@ interface FormState {
   phone: string
   eventDate: string
   eventType: string
+  eventTypeOther: string
   venue: string
   message: string
 }
 
 const INITIAL: FormState = {
   name: '', email: '', phone: '',
-  eventDate: '', eventType: '', venue: '', message: '',
+  eventDate: '', eventType: '', eventTypeOther: '', venue: '', message: '',
 }
+
+// Must stay in sync with ALLOWED_EVENT_TYPES in app/api/booking/route.ts
+const EVENT_TYPES = [
+  'Wedding',
+  'Quinceañera',
+  'Mitzvah',
+  'Birthday / Private',
+  'Corporate',
+  'Club / Concert',
+  'Other',
+]
+
+const OTHER_MAX = 60
 
 function validate(f: FormState): Record<string, string> {
   const e: Record<string, string> = {}
@@ -30,6 +44,7 @@ function validate(f: FormState): Record<string, string> {
     if (new Date(f.eventDate) < today) e.eventDate = 'Must be a future date'
   }
   if (!f.eventType) e.eventType = 'Required'
+  else if (f.eventType === 'Other' && !f.eventTypeOther.trim()) e.eventTypeOther = 'Tell us what kind of event'
   if (!f.venue.trim()) e.venue = 'Required'
   return e
 }
@@ -38,10 +53,30 @@ export default function BookSection() {
   const [form, setForm] = useState<FormState>(INITIAL)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
+  const otherRef = useRef<HTMLInputElement>(null)
+
+  // Focus the free-text box when "Other" is picked. `preventScroll` matters here:
+  // the panel's scrollTop is driven by the vinyl scroll math on laptop layouts,
+  // so letting the browser scroll the input into view would jerk the panel.
+  useEffect(() => {
+    if (form.eventType === 'Other') otherRef.current?.focus({ preventScroll: true })
+  }, [form.eventType])
 
   const update = (k: keyof FormState, v: string) => {
     setForm(f => ({ ...f, [k]: v }))
     if (errors[k]) setErrors(e => { const n = { ...e }; delete n[k]; return n })
+  }
+
+  // Switching away from "Other" discards whatever was typed in the free-text box,
+  // so a stale value can never be submitted alongside a different event type.
+  const updateEventType = (v: string) => {
+    setForm(f => ({ ...f, eventType: v, eventTypeOther: v === 'Other' ? f.eventTypeOther : '' }))
+    setErrors(e => {
+      const n = { ...e }
+      delete n.eventType
+      if (v !== 'Other') delete n.eventTypeOther
+      return n
+    })
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -71,7 +106,7 @@ export default function BookSection() {
           Request received — DJ Essence will be in touch shortly.
         </div>
         <div className="direct">
-          <div>CALL / TEXT<b><a href="tel:9169104684" style={{ color: 'inherit', textDecoration: 'none' }}>916.910.4684</a></b></div>
+          <div>EMAIL<b><a className="contact-email" href="mailto:djessence916@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>djessence916@gmail.com</a></b></div>
           <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>@djessence_official</a></b></div>
         </div>
       </div>
@@ -83,7 +118,7 @@ export default function BookSection() {
   return (
     <div className="panel panel-book">
       <div className="eyebrow">07 · Book</div>
-      <h2>Let&apos;s make it <em>epic.</em></h2>
+      <h2>Essence Events Booking Request</h2>
       <form onSubmit={submit} noValidate>
         <div className="two">
           <div className="field">
@@ -112,19 +147,27 @@ export default function BookSection() {
         <div className="two">
           <div className="field">
             <label>Event Type</label>
-            <select value={form.eventType} onChange={e => update('eventType', e.target.value)}>
+            <select value={form.eventType} onChange={e => updateEventType(e.target.value)}>
               <option value="">Select…</option>
-              <option>Wedding</option>
-              <option>Quinceañera</option>
-              <option>Birthday / Private</option>
-              <option>Corporate</option>
-              <option>Club / Concert</option>
+              {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
+            {form.eventType === 'Other' && (
+              <input
+                ref={otherRef}
+                type="text"
+                className="field-other"
+                placeholder="What kind of event?"
+                maxLength={OTHER_MAX}
+                value={form.eventTypeOther}
+                onChange={e => update('eventTypeOther', e.target.value)}
+              />
+            )}
             {errors.eventType && <span className="field-error">{errors.eventType}</span>}
+            {errors.eventTypeOther && <span className="field-error">{errors.eventTypeOther}</span>}
           </div>
           <div className="field">
-            <label>Venue / City</label>
-            <input type="text" placeholder="Where?" value={form.venue} onChange={e => update('venue', e.target.value)} />
+            <label>Venue Address</label>
+            <input type="text" placeholder="Venue name + street, city" value={form.venue} onChange={e => update('venue', e.target.value)} />
             {errors.venue && <span className="field-error">{errors.venue}</span>}
           </div>
         </div>
@@ -134,7 +177,7 @@ export default function BookSection() {
         </div>
         {status === 'error' && (
           <p style={{ color: 'var(--magenta)', fontFamily: 'var(--f-mono)', fontSize: 11 }}>
-            Something went wrong — <a href="tel:9169104684" style={{ color: 'inherit' }}>call or text: 916.910.4684</a>
+            Something went wrong — <a href="mailto:djessence916@gmail.com" style={{ color: 'inherit' }}>email djessence916@gmail.com</a>
           </p>
         )}
         <button type="submit" className="submit-btn" disabled={status === 'loading'}>
@@ -143,7 +186,7 @@ export default function BookSection() {
         </button>
       </form>
       <div className="direct">
-        <div>CALL / TEXT<b><a href="tel:9169104684" style={{ color: 'inherit', textDecoration: 'none' }}>916.910.4684</a></b></div>
+        <div>EMAIL<b><a className="contact-email" href="mailto:djessence916@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>djessence916@gmail.com</a></b></div>
         <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>@djessence_official</a></b></div>
       </div>
     </div>

@@ -39,9 +39,10 @@ export async function GET() {
     const res = await fetch(url, { next: { revalidate: 3600 } })
     const raw = await res.json()
 
-    // DEBUG — remove before deploy
     if (!res.ok || !raw.posts?.length) {
-      return NextResponse.json({ debug: { status: res.status, feedId, raw } })
+      // Log server-side only — visible in Vercel's Logs tab, never sent to the client.
+      console.error('[instagram] curator returned no posts', { status: res.status })
+      return NextResponse.json({ posts: [] })
     }
 
     const posts = (raw as CuratorResponse).posts
@@ -58,6 +59,7 @@ export async function GET() {
 
     return NextResponse.json({ posts })
   } catch (e) {
-    return NextResponse.json({ error: String(e) })
+    console.error('[instagram] curator fetch failed', e)
+    return NextResponse.json({ posts: [] })
   }
 }

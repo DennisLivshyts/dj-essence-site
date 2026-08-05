@@ -10,21 +10,21 @@ export default function HomeSection({ goTo }: Props) {
       <div className="eyebrow">Weddings · Clubs · Concerts · Private</div>
       <h1>
         <Glitch every={5200}>DJ</Glitch>{' '}
-        <span className="ital">ESSENCE</span>
+        ESSENCE
         <br />
-        <span className="outline">MAKE IT</span>{' '}
+        MAKE IT{' '}
         <span className="mag">EPIC.</span>
       </h1>
       <p>
-        Multi‑award‑winning DJ with 20+ years on the decks and over 5,000 events across all 50
+        Multi‑award‑winning DJ & MC with 20+ years on the decks and over 5,000 events across all 50
         states and Mexico. Sound, lights, MC, cold sparks, dancing on clouds — the full production,
-        one phone call.
+        one booking.
       </p>
       <div className="meta-row">
         <div>EVENTS<b>5,000+</b></div>
         <div>REACH<b>50 States + MX</b></div>
         <div>SINCE<b>Early 2000s</b></div>
-        <div>CALL / TEXT<b><a href="tel:9169104684" style={{ color: 'inherit', textDecoration: 'none' }}>916.910.4684</a></b></div>
+        <div>EMAIL<b><a className="contact-email" href="mailto:djessence916@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>djessence916@gmail.com</a></b></div>
       </div>
       <div className="cta">
         <button className="primary" onClick={() => goTo(6)}>Book Your Date →</button>

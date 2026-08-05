@@ -19,12 +19,15 @@ const SECTIONS = [
   { id: 'about',    label: 'About',    sub: 'THE DJ',      color: '#ff006e' },
   { id: 'services', label: 'Services', sub: 'PRODUCTION',  color: '#fbbf24' },
   { id: 'gallery',  label: 'Events',   sub: 'MOMENTS',     color: '#00ff88' },
-  { id: 'photos',   label: 'Photos',   sub: 'THE BOOTH',   color: '#fbbf24' },
+  { id: 'photos',   label: 'Gallery',  sub: 'THE BOOTH',   color: '#fbbf24' },
   { id: 'reviews',  label: 'Reviews',  sub: 'CLIENT LOVE', color: '#ff006e' },
   { id: 'book',     label: 'Book',     sub: 'CONTACT',     color: '#fbbf24' },
 ]
 
 const N = SECTIONS.length
+// Derived, not hardcoded — adding or reordering a section must not silently
+// point the Services CTA at the wrong panel.
+const BOOK_IDX = SECTIONS.findIndex(s => s.id === 'book')
 
 export default function DJEssenceApp() {
   const [scrollProgress, setScrollProgress]   = useState(0)
@@ -62,9 +65,13 @@ export default function DJEssenceApp() {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  // Laptop detection — also update ref so scroll handler (empty-dep effect) stays current
+  // Split-layout detection (panel left / vinyl right) — also update ref so the scroll
+  // handler (empty-dep effect) stays current.
+  // MUST stay in sync with the matching @media rule in globals.css: that block sets
+  // .panel-glass { overflow: hidden } and relies on this flag to drive scrollTop from
+  // the page scroll. If the two ever disagree, panel content is clipped and unreachable.
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1100px) and (max-height: 920px)')
+    const mq = window.matchMedia('(min-width: 1100px)')
     isLaptopRef.current = mq.matches
     setIsLaptop(mq.matches)
     const handler = (e: MediaQueryListEvent) => {
@@ -287,7 +294,7 @@ export default function DJEssenceApp() {
                 <div className="mobile-content">
                   {s.id === 'home'     && <HomeSection goTo={goTo} />}
                   {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
-                  {s.id === 'services' && <ServicesSection />}
+                  {s.id === 'services' && <ServicesSection goToBook={() => goTo(BOOK_IDX)} />}
                   {s.id === 'gallery'  && <GallerySection />}
                   {s.id === 'photos'   && <PhotosSection />}
                   {s.id === 'reviews'  && <ReviewsSection />}
@@ -314,7 +321,7 @@ export default function DJEssenceApp() {
                 <div className="panel-glass" ref={el => { panelGlassRefs.current[i] = el }}>
                   {s.id === 'home'     && <HomeSection goTo={goTo} />}
                   {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
-                  {s.id === 'services' && <ServicesSection />}
+                  {s.id === 'services' && <ServicesSection goToBook={() => goTo(BOOK_IDX)} />}
                   {s.id === 'gallery'  && <GallerySection />}
                   {s.id === 'photos'   && <PhotosSection />}
                   {s.id === 'reviews'  && <ReviewsSection />}
