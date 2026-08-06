@@ -1,43 +1,14 @@
 'use client'
 
-import { PACKAGES, ADDONS } from '@/lib/bookingOptions'
+import { PACKAGES, ADDONS, ADDON_GROUPS, ADDON_GROUP_ACCENT } from '@/lib/bookingOptions'
 
 interface Props { goToBook: () => void }
 
-// Everything Arman offers. The two add-on effects are listed here as well because
-// they're part of what he does — where they sit commercially is spelled out below.
-const SERVICES = [
-  {
-    id: 'dj',
-    name: 'DJ Services',
-    desc: 'Open‑format mixing that reads the floor and keeps it full.',
-  },
-  {
-    id: 'mc',
-    name: 'MC Hosting',
-    desc: 'Entrances, introductions, toasts and announcements.',
-  },
-  {
-    id: 'production',
-    name: 'Full Production',
-    desc: 'Sound, hosting and lighting from one point of contact.',
-  },
-  {
-    id: 'lighting',
-    name: 'State‑of‑the‑Art Lighting',
-    desc: 'Moving‑head and wash lighting programmed to the music.',
-  },
-  {
-    id: 'clouds',
-    name: 'Dancing on Clouds',
-    desc: 'Low‑fog floor effect for the first dance.',
-  },
-  {
-    id: 'sparks',
-    name: 'Cold Sparks',
-    desc: 'Indoor‑safe spark fountains. All the drama, no heat.',
-  },
-]
+// The old "What he brings" list lived here — six services with one-line descriptions.
+// Removed 2026-08-05: every entry already appeared below, either as a package feature
+// or an add-on chip, and it framed Dancing on Clouds / Cold Sparks as included when
+// the add-on band directly beneath says they aren't. The packages answer "what does
+// he bring" better, because they say what you get at each tier.
 
 function WaveDeco() {
   return (
@@ -96,27 +67,9 @@ export default function ServicesSection({ goToBook }: Props) {
       <div className="eyebrow">03 · Services</div>
       <h2>The <em>full</em> production.</h2>
 
-      {/* ── WHAT HE DOES ── */}
-      <div className="svc-row-label svc-row-label--included">
-        <span className="svc-dot svc-dot--acid" />
-        What he brings
-      </div>
-
-      <div className="svc-list">
-        {SERVICES.map((s, i) => (
-          <div key={s.id} className="svc-item">
-            <span className="svc-item-num">{String(i + 1).padStart(2, '0')}</span>
-            <div className="svc-item-text">
-              <div className="svc-item-name">{s.name}</div>
-              <div className="svc-item-desc">{s.desc}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* ── PACKAGES ── */}
       <div className="svc-row-label svc-row-label--pkg">
-        <span className="svc-dot svc-dot--magenta" />
+        <span className="svc-dot svc-dot--acid" />
         Three ways to book
       </div>
 
@@ -148,18 +101,19 @@ export default function ServicesSection({ goToBook }: Props) {
         Add‑ons · not included in any package
       </div>
 
-      <div className="svc-addon-grid svc-addon-grid--pair">
-        {ADDONS.map(a => (
-          <div key={a.id} className={`svc-addon svc-addon--${a.accent}`}>
-            <div className="svc-addon-glow" />
-            <div className="svc-addon-top">
-              <div className="svc-addon-name">{a.name}</div>
-              <div className="svc-addon-tag">ADD‑ON</div>
-            </div>
-            <div className="svc-addon-desc">{a.desc}</div>
+      {ADDON_GROUPS.map(g => (
+        <div key={g} className="svc-addon-group">
+          <div className="svc-addon-group-name">{g}</div>
+          <div className="svc-chips">
+            {ADDONS.filter(a => a.group === g).map(a => (
+              <span key={a.id} className={`svc-chip svc-chip--${ADDON_GROUP_ACCENT[g]}`}>
+                {a.name}
+                {a.note && <em>{a.note}</em>}
+              </span>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
       <div className="svc-cta">
         <span>Every event is quoted individually.</span>

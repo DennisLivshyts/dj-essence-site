@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { EVENT_TYPES, PACKAGES, ADDONS, PACKAGE_UNDECIDED } from '@/lib/bookingOptions'
+import { EVENT_TYPES, PACKAGES, ADDONS, ADDON_GROUPS, PACKAGE_UNDECIDED } from '@/lib/bookingOptions'
 
 interface FormState {
   name: string
@@ -198,21 +198,31 @@ export default function BookSection() {
           {errors.pkg && <span className="field-error">{errors.pkg}</span>}
         </fieldset>
 
-        <fieldset className="pick-field">
-          <legend>Add‑ons <span className="pick-optional">optional · not in any package</span></legend>
-          <div className="pick-group">
-            {ADDONS.map(a => (
-              <div key={a.id} className="pick pick--addon">
-                <input
-                  type="checkbox"
-                  id={`addon-${a.id}`}
-                  checked={form.addOns.includes(a.name)}
-                  onChange={() => toggleAddOn(a.name)}
-                />
-                <label htmlFor={`addon-${a.id}`}>
-                  <span className="pick-check" aria-hidden>✓</span>
-                  <span className="pick-name">{a.name}</span>
-                </label>
+        <fieldset className="pick-field pick-field--addons">
+          <legend>
+            Add‑ons <span className="pick-optional">optional · not in any package</span>
+            {form.addOns.length > 0 && <span className="pick-count">{form.addOns.length} selected</span>}
+          </legend>
+          <div className="pick-scroll">
+            {ADDON_GROUPS.map(g => (
+              <div key={g} className="pick-subgroup">
+                <div className="pick-subgroup-name">{g}</div>
+                <div className="pick-group">
+                  {ADDONS.filter(a => a.group === g).map(a => (
+                    <div key={a.id} className="pick pick--addon">
+                      <input
+                        type="checkbox"
+                        id={`addon-${a.id}`}
+                        checked={form.addOns.includes(a.name)}
+                        onChange={() => toggleAddOn(a.name)}
+                      />
+                      <label htmlFor={`addon-${a.id}`}>
+                        <span className="pick-check" aria-hidden>✓</span>
+                        <span className="pick-name">{a.name}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

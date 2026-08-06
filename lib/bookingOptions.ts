@@ -70,27 +70,45 @@ export const PACKAGES: Package[] = [
   },
 ]
 
+export type AddOnGroup = 'Effects & Lighting' | 'Photo & Video' | 'On the Day'
+
 export interface AddOn {
   id: string
-  accent: 'acid' | 'magenta' | 'amber'
   name: string
-  desc: string
+  group: AddOnGroup
+  /** Optional clarifier, shown on the Services section only — chips stay short in the form. */
+  note?: string
+}
+
+// Grouped because a flat list of fifteen checkboxes is a wall of text in both places
+// this renders. Order within a group is Arman's order from his own list.
+export const ADDON_GROUPS: AddOnGroup[] = ['Effects & Lighting', 'Photo & Video', 'On the Day']
+
+export const ADDON_GROUP_ACCENT: Record<AddOnGroup, 'acid' | 'magenta' | 'amber'> = {
+  'Effects & Lighting': 'magenta',
+  'Photo & Video': 'acid',
+  'On the Day': 'amber',
 }
 
 // Deliberately never bundled into a package — Arman was specific about this.
 export const ADDONS: AddOn[] = [
-  {
-    id: 'clouds',
-    accent: 'acid',
-    name: 'Dancing on Clouds',
-    desc: 'Low‑fog floor effect for the first dance. Magazine‑cover photos, guaranteed.',
-  },
-  {
-    id: 'sparks',
-    accent: 'magenta',
-    name: 'Cold Sparks',
-    desc: 'Indoor‑safe spark fountains for grand entrances & first dances. Zero heat. All drama.',
-  },
+  { id: 'co2',           name: 'CO2 Party Cannon',    group: 'Effects & Lighting' },
+  { id: 'sparks',        name: 'Cold Spark Machines', group: 'Effects & Lighting' },
+  { id: 'clouds',        name: 'Dancing on Clouds',   group: 'Effects & Lighting', note: 'Dry ice smoke machine' },
+  { id: 'confetti',      name: 'Confetti Cannon',     group: 'Effects & Lighting' },
+  { id: 'lasers',        name: 'Lasers',              group: 'Effects & Lighting' },
+  { id: 'movers',        name: 'Party Light Movers',  group: 'Effects & Lighting' },
+  { id: 'uplighting',    name: 'Up Lighting',         group: 'Effects & Lighting' },
+
+  { id: 'booth360',      name: '360 Photobooth',      group: 'Photo & Video' },
+  { id: 'booth',         name: 'Regular Photobooth',  group: 'Photo & Video' },
+  { id: 'videowall',     name: 'Video Wall',          group: 'Photo & Video' },
+  { id: 'photographer',  name: 'Photographer',        group: 'Photo & Video' },
+  { id: 'videographer',  name: 'Videographer',        group: 'Photo & Video' },
+  { id: 'highlights',    name: 'Highlights & Recaps', group: 'Photo & Video' },
+
+  { id: 'coordination',  name: 'Event Coordination',  group: 'On the Day' },
+  { id: 'content',       name: 'Day-of Content Creation', group: 'On the Day' },
 ]
 
 // Offered so that not knowing which package you want never blocks an enquiry.
