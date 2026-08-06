@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { EVENT_TYPES, PACKAGE_CHOICES, ADDON_NAMES } from '@/lib/bookingOptions'
 
 // ── Rate limiting ────────────────────────────────────────────────────────────
 // In-memory store: works per warm serverless instance. Sufficient for a
@@ -31,21 +32,16 @@ const FIELD_LIMITS: Record<string, number> = {
   eventType:       40,
   eventTypeOther:  60,
   venue:          200,
+  pkg:             40,
   message:      2_000,
 }
 
-// Must stay in sync with EVENT_TYPES in components/sections/BookSection.tsx.
-// 'Mitzvah' and 'Other' were offered by the form but missing here, so both were
-// rejected with a 422 before reaching the inbox.
-const ALLOWED_EVENT_TYPES = new Set([
-  'Wedding',
-  'Quinceañera',
-  'Mitzvah',
-  'Birthday / Private',
-  'Corporate',
-  'Club / Concert',
-  'Other',
-])
+// All three sets come from lib/bookingOptions.ts, which the form renders from too —
+// so the UI can no longer offer a choice this route rejects. That drift is exactly
+// how 'Mitzvah' and 'Other' used to 422 while the dropdown happily showed them.
+const ALLOWED_EVENT_TYPES = new Set<string>(EVENT_TYPES)
+const ALLOWED_PACKAGES    = new Set<string>(PACKAGE_CHOICES)
+const ALLOWED_ADDONS      = new Set<string>(ADDON_NAMES)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
@@ -96,9 +92,10 @@ function escHeader(s: string) {
 
 function buildEmailHtml(data: {
   name: string; email: string; phone: string
-  eventDate: string; eventType: string; venue: string; message: string
+  eventDate: string; eventType: string; venue: string
+  pkg: string; addOns: string; message: string
 }) {
-  const { name, email, phone, eventDate, eventType, venue, message } = data
+  const { name, email, phone, eventDate, eventType, venue, pkg, addOns, message } = data
 
   const row = (label: string, val: string) => `
     <tr>
@@ -120,6 +117,8 @@ function buildEmailHtml(data: {
       ${row('Event Type', esc(eventType))}
       ${row('Event Date', esc(fmt(eventDate)))}
       ${row('Venue Address', esc(venue))}
+      ${row('Package', esc(pkg))}
+      ${row('Add-ons', addOns ? esc(addOns) : '<span style="color:#666;">None selected</span>')}
       ${message.trim() ? row('Message', esc(message)) : ''}
     </table>
     <p style="color:#555;font-size:12px;margin-top:20px;line-height:1.6;">
@@ -167,7 +166,22 @@ export async function POST(request: Request) {
 
   // Extract and coerce to strings
   const raw: Record<string, string> = {}
-  for (const key of ['name', 'email', 'phone', 'eventDate', 'eventType', 'eventTypeOther', 'venue', 'message']) {
+  // addOns is the one array field, so it can't go through the string extraction below.
+  const rawAddOns = body.addOns
+  if (rawAddOns !== undefined && !Array.isArray(rawAddOns)) {
+    return NextResponse.json({ error: 'Bad request' }, { status: 400 })
+  }
+  const addOnList: string[] = Array.isArray(rawAddOns) ? rawAddOns : []
+  if (
+    addOnList.length > ALLOWED_ADDONS.size ||
+    !addOnList.every(a => typeof a === 'string' && ALLOWED_ADDONS.has(a))
+  ) {
+    return NextResponse.json({ errors: { addOns: 'Invalid add-on' } }, { status: 422 })
+  }
+  // Dedupe so a crafted payload can't repeat an add-on to pad the email.
+  const addOns = [...new Set(addOnList)]
+
+  for (const key of ['name', 'email', 'phone', 'eventDate', 'eventType', 'eventTypeOther', 'venue', 'pkg', 'message']) {
     const val = body[key]
     if (val !== undefined && typeof val !== 'string') {
       return NextResponse.json({ error: 'Bad request' }, { status: 400 })
@@ -185,7 +199,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const { name, email, phone, eventDate, eventType, eventTypeOther, venue, message } = raw
+  const { name, email, phone, eventDate, eventType, eventTypeOther, venue, pkg, message } = raw
 
   // Semantic validation
   const errors: Record<string, string> = {}
@@ -202,6 +216,8 @@ export async function POST(request: Request) {
     errors.eventTypeOther = 'Tell us what kind of event'
   }
   if (!venue.trim())      errors.venue     = 'Required'
+  if (!pkg.trim())        errors.pkg       = 'Required'
+  else if (!ALLOWED_PACKAGES.has(pkg.trim())) errors.pkg = 'Invalid package'
 
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ errors }, { status: 422 })
@@ -218,6 +234,8 @@ export async function POST(request: Request) {
     eventDate: eventDate.trim(),
     eventType: type === 'Other' ? `${eventTypeOther.trim()} (Other)` : type,
     venue:     venue.trim(),
+    pkg:       pkg.trim(),
+    addOns:    addOns.join(' · '),
     message:   message.trim(),
   }
 

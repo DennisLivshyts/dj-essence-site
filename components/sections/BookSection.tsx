@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { EVENT_TYPES, PACKAGES, ADDONS, PACKAGE_UNDECIDED } from '@/lib/bookingOptions'
 
 interface FormState {
   name: string
@@ -10,24 +11,16 @@ interface FormState {
   eventType: string
   eventTypeOther: string
   venue: string
+  pkg: string
+  addOns: string[]
   message: string
 }
 
 const INITIAL: FormState = {
   name: '', email: '', phone: '',
-  eventDate: '', eventType: '', eventTypeOther: '', venue: '', message: '',
+  eventDate: '', eventType: '', eventTypeOther: '', venue: '',
+  pkg: '', addOns: [], message: '',
 }
-
-// Must stay in sync with ALLOWED_EVENT_TYPES in app/api/booking/route.ts
-const EVENT_TYPES = [
-  'Wedding',
-  'Quinceañera',
-  'Mitzvah',
-  'Birthday / Private',
-  'Corporate',
-  'Club / Concert',
-  'Other',
-]
 
 const OTHER_MAX = 60
 
@@ -46,6 +39,7 @@ function validate(f: FormState): Record<string, string> {
   if (!f.eventType) e.eventType = 'Required'
   else if (f.eventType === 'Other' && !f.eventTypeOther.trim()) e.eventTypeOther = 'Tell us what kind of event'
   if (!f.venue.trim()) e.venue = 'Required'
+  if (!f.pkg) e.pkg = 'Pick one — "Not sure yet" is fine'
   return e
 }
 
@@ -65,6 +59,13 @@ export default function BookSection() {
   const update = (k: keyof FormState, v: string) => {
     setForm(f => ({ ...f, [k]: v }))
     if (errors[k]) setErrors(e => { const n = { ...e }; delete n[k]; return n })
+  }
+
+  const toggleAddOn = (name: string) => {
+    setForm(f => ({
+      ...f,
+      addOns: f.addOns.includes(name) ? f.addOns.filter(a => a !== name) : [...f.addOns, name],
+    }))
   }
 
   // Switching away from "Other" discards whatever was typed in the free-text box,
@@ -149,7 +150,7 @@ export default function BookSection() {
             <label>Event Type</label>
             <select value={form.eventType} onChange={e => updateEventType(e.target.value)}>
               <option value="">Select…</option>
-              {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
+              {EVENT_TYPES.map((t: string) => <option key={t}>{t}</option>)}
             </select>
             {form.eventType === 'Other' && (
               <input
@@ -171,6 +172,52 @@ export default function BookSection() {
             {errors.venue && <span className="field-error">{errors.venue}</span>}
           </div>
         </div>
+        {/* Real radios behind styled labels: keyboard nav, arrow-key cycling and
+            screen-reader grouping all come free, which a div-with-onClick would not give. */}
+        <fieldset className="pick-field">
+          <legend>Package</legend>
+          <div className="pick-group">
+            {[...PACKAGES.map(p => ({ name: p.name, hint: p.tagline })),
+              { name: PACKAGE_UNDECIDED, hint: 'Help me choose' }].map(opt => (
+              <div key={opt.name} className="pick">
+                <input
+                  type="radio"
+                  name="pkg"
+                  id={`pkg-${opt.name}`}
+                  value={opt.name}
+                  checked={form.pkg === opt.name}
+                  onChange={() => update('pkg', opt.name)}
+                />
+                <label htmlFor={`pkg-${opt.name}`}>
+                  <span className="pick-name">{opt.name}</span>
+                  <span className="pick-hint">{opt.hint}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+          {errors.pkg && <span className="field-error">{errors.pkg}</span>}
+        </fieldset>
+
+        <fieldset className="pick-field">
+          <legend>Add‑ons <span className="pick-optional">optional · not in any package</span></legend>
+          <div className="pick-group">
+            {ADDONS.map(a => (
+              <div key={a.id} className="pick pick--addon">
+                <input
+                  type="checkbox"
+                  id={`addon-${a.id}`}
+                  checked={form.addOns.includes(a.name)}
+                  onChange={() => toggleAddOn(a.name)}
+                />
+                <label htmlFor={`addon-${a.id}`}>
+                  <span className="pick-check" aria-hidden>✓</span>
+                  <span className="pick-name">{a.name}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </fieldset>
+
         <div className="field">
           <label>Message (optional)</label>
           <textarea rows={2} placeholder="Any details…" value={form.message} onChange={e => update('message', e.target.value)} />

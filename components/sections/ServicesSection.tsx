@@ -1,5 +1,7 @@
 'use client'
 
+import { PACKAGES, ADDONS } from '@/lib/bookingOptions'
+
 interface Props { goToBook: () => void }
 
 // Everything Arman offers. The two add-on effects are listed here as well because
@@ -34,65 +36,6 @@ const SERVICES = [
     id: 'sparks',
     name: 'Cold Sparks',
     desc: 'Indoor‑safe spark fountains. All the drama, no heat.',
-  },
-]
-
-// Three ways to book. Each tier stacks on the one before it — the feature lists are
-// written to read top-to-bottom as an escalation, not as a checkbox matrix.
-const PACKAGES = [
-  {
-    id: 'essentials',
-    tier: '01',
-    name: 'Essentials',
-    tagline: 'The music, handled.',
-    deco: 'wave',
-    accent: 'acid',
-    feats: [
-      'Professional sound system',
-      'Open‑format DJ for the full event',
-      'Basic announcements & introductions',
-    ],
-  },
-  {
-    id: 'signature',
-    tier: '02',
-    name: 'Signature',
-    tagline: 'The music and the room, hosted.',
-    deco: 'knobs',
-    accent: 'magenta',
-    feats: [
-      'Everything in Essentials',
-      'Full MC hosting — leads the event start to finish',
-      'Runs your timeline so the night flows',
-    ],
-  },
-  {
-    id: 'full',
-    tier: '03',
-    name: 'Full Production',
-    tagline: 'The whole show.',
-    deco: 'beams',
-    accent: 'amber',
-    feats: [
-      'Everything in Signature',
-      'State‑of‑the‑art lighting for the full party',
-      'Sound, hosting and lighting from one team',
-    ],
-  },
-]
-
-const ADDONS = [
-  {
-    id: 'clouds',
-    accent: 'acid',
-    name: 'Dancing on Clouds',
-    desc: 'Low‑fog floor effect for the first dance. Magazine‑cover photos, guaranteed.',
-  },
-  {
-    id: 'sparks',
-    accent: 'magenta',
-    name: 'Cold Sparks',
-    desc: 'Indoor‑safe spark fountains for grand entrances & first dances. Zero heat. All drama.',
   },
 ]
 

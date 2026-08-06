@@ -1266,6 +1266,78 @@ a.gallery-tile { text-decoration: none; }
 .panel-book .field input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.6); cursor: pointer;
 }
+
+/* ── Click-select package / add-on pickers ──
+   The native input stays in the DOM (never display:none) so it remains focusable
+   and announced; it's visually hidden and the label is what gets styled. */
+.panel-book .pick-field {
+  border: 0; padding: 0; margin: 0;
+  border-bottom: 1px solid var(--line); padding-bottom: 10px;
+}
+.panel-book .pick-field legend {
+  font-family: var(--f-mono); font-size: 9px;
+  color: var(--ink-dim); letter-spacing: 0.25em;
+  text-transform: uppercase; padding: 0; margin-bottom: 7px;
+}
+.pick-optional {
+  letter-spacing: 0.12em; opacity: 0.65; text-transform: none;
+}
+.panel-book .pick-group { display: flex; flex-wrap: wrap; gap: 7px; }
+.panel-book .pick { flex: 1 1 140px; position: relative; }
+.panel-book .pick--addon { flex: 1 1 170px; }
+
+.panel-book .pick input {
+  position: absolute; opacity: 0;
+  width: 1px; height: 1px; margin: 0; pointer-events: none;
+}
+.panel-book .pick label {
+  display: flex; flex-direction: column; gap: 2px;
+  height: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  cursor: none;
+  transition: border-color 160ms, background 160ms, box-shadow 160ms;
+}
+.panel-book .pick--addon label { flex-direction: row; align-items: center; gap: 8px; }
+.panel-book .pick label:hover { border-color: var(--acid); }
+
+.pick-name {
+  font-family: var(--f-display); font-weight: 700;
+  font-size: 13px; letter-spacing: -0.01em; line-height: 1.15;
+  color: var(--ink);
+}
+.pick-hint {
+  font-family: var(--f-mono); font-size: 9px;
+  color: var(--ink-dim); line-height: 1.3;
+}
+/* Tick box for add-ons — empty outline until checked */
+.pick-check {
+  width: 15px; height: 15px; flex-shrink: 0;
+  border: 1px solid var(--line-strong); border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: transparent;
+  transition: all 160ms;
+}
+
+/* Deliberately NOT color-mix(): using it here made the CSS pipeline split this rule
+   and silently drop the border-color and box-shadow declarations, leaving the checked
+   state visually identical to the unchecked one. Explicit per-theme rgba instead —
+   the accent differs between themes (light #00934a / dark #00ff88). */
+.panel-book .pick input:checked + label {
+  border-color: var(--acid);
+  background: rgba(0, 147, 74, 0.09);
+  box-shadow: inset 0 0 0 1px var(--acid);
+}
+[data-theme="dark"] .panel-book .pick input:checked + label {
+  background: rgba(0, 255, 136, 0.10);
+}
+.panel-book .pick input:checked + label .pick-check {
+  background: var(--acid); border-color: var(--acid); color: #0a0a0a;
+}
+/* Keyboard focus must be visible even though the input itself is hidden */
+.panel-book .pick input:focus-visible + label {
+  outline: 2px solid var(--magenta); outline-offset: 2px;
+}
 .panel-book .submit-btn {
   margin-top: 6px;
   background: var(--acid); color: #0a0a0a;
