@@ -26,10 +26,33 @@ export async function POST(request: Request): Promise<NextResponse> {
           throw new Error('Unauthorized')
         }
 
+        // Video poster frames go to _meta/posters/ — outside the gallery/ prefix, so
+        // list() never returns them as gallery items of their own. They must keep a
+        // deterministic name (no random suffix) because that name is what pairs a
+        // poster back to its clip.
+        const isPoster = pathname.startsWith('_meta/posters/')
+        if (isPoster) {
+          return {
+            allowedContentTypes: ['image/jpeg'],
+            addRandomSuffix: false,
+            maximumSizeInBytes: 2 * 1024 * 1024,
+          }
+        }
+
         return {
-          allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
+          allowedContentTypes: [
+            'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+            // Clips up to a minute. quicktime is what iPhones actually send for .mov.
+            'video/mp4', 'video/quicktime', 'video/webm',
+          ],
           addRandomSuffix: true,
-          maximumSizeInBytes: 20 * 1024 * 1024, // 20 MB — phone photos, occasionally large
+          // Sized for video: ~1 min of 1080p H.264 lands at 40-75 MB. 4K at 60fps blows
+          // past this, which is intentional — there's no transcoding in this stack, so
+          // whatever is stored is what every visitor downloads. The upload page tells
+          // Arman to shoot/export 1080p, and the client rejects oversize before upload.
+          maximumSizeInBytes: 120 * 1024 * 1024,
+          // Required for files this size — the SDK splits them into parts.
+          multipart: true,
         }
       },
       onUploadCompleted: async ({ blob }) => {

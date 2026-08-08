@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 interface Photo {
   url: string
   uploadedAt: string
+  isVideo?: boolean
+  posterUrl?: string
 }
 
 // Shown until Arman uploads real photos — lets the layout be previewed with real images
@@ -55,7 +57,26 @@ export default function PhotoWall() {
       <div className="gallery-grid">
         {photos.map((photo, i) => (
           <div key={photo.url} className={`gallery-tile ${tileClass(i)}`} data-label={tileLabel(photo)}>
-            <img src={photo.url} alt="" loading="lazy" />
+            {photo.isVideo ? (
+              // preload="metadata" is doing the heavy lifting: the browser fetches only
+              // the header, not the clip, so a wall of videos costs a few hundred KB
+              // instead of tens of MB. There is no transcoding in this stack, so the
+              // full file downloads only when a visitor actually presses play.
+              // The #t=0.1 fragment makes it seek to a real frame for the still.
+              <video
+                src={`${photo.url}#t=0.1`}
+                poster={photo.posterUrl}
+                // With a poster the browser needs nothing until play is pressed, so the
+                // wall costs a few JPEGs. Without one, fall back to fetching just the
+                // header so it can at least try to paint a frame instead of a black box.
+                preload={photo.posterUrl ? 'none' : 'metadata'}
+                controls
+                playsInline
+                muted
+              />
+            ) : (
+              <img src={photo.url} alt="" loading="lazy" />
+            )}
           </div>
         ))}
       </div>

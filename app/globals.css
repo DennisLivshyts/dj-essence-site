@@ -837,10 +837,14 @@ body::after {
 }
 
 a.gallery-tile { text-decoration: none; }
-.gallery-tile img {
+.gallery-tile img,
+.gallery-tile video {
   width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
+/* Native controls need a real cursor — the site sets cursor:none globally and
+   relies on the custom ring, which can't operate a video scrubber. */
+.gallery-tile video { cursor: auto; }
 .gallery-play {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -1020,7 +1024,29 @@ a.gallery-tile { text-decoration: none; }
   border: 1px solid var(--line);
   background: var(--bg-2);
 }
-.upload-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upload-item img,
+.upload-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upload-item-badge {
+  position: absolute; top: 6px; left: 6px;
+  font-family: var(--f-mono); font-size: 8px;
+  letter-spacing: 0.2em;
+  padding: 2px 6px; border-radius: 3px;
+  background: rgba(0,0,0,0.65); color: var(--acid);
+}
+/* Files the picker refused, with the reason. Previously they were dropped silently,
+   so dragging in an unsupported file looked like the page had simply broken. */
+.upload-rejections {
+  margin-top: 10px;
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: var(--f-mono); font-size: 10px; line-height: 1.5;
+  color: var(--magenta);
+  border-left: 2px solid var(--magenta);
+  padding-left: 10px;
+}
+.upload-hint {
+  font-family: var(--f-mono); font-size: 10px;
+  color: var(--ink-dim); margin-top: 4px;
+}
 .upload-item-status {
   position: absolute; inset: auto 0 0 0;
   padding: 6px 8px;
@@ -1097,7 +1123,8 @@ a.gallery-tile { text-decoration: none; }
 }
 .manage-tile:active { cursor: grabbing; }
 .manage-tile.dragging { opacity: 0.4; border-color: var(--acid); }
-.manage-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.manage-tile img,
+.manage-tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .manage-tile-overlay {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; justify-content: space-between;
