@@ -490,13 +490,13 @@ body::after {
 
 .panel .eyebrow {
   font-family: var(--f-mono);
-  font-size: 11px; letter-spacing: 0.3em;
+  font-size: 13px; letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--acid);
   display: flex; align-items: center; gap: 12px;
 }
 .panel .eyebrow::before {
-  content: ""; width: 30px; height: 1px; background: var(--acid); flex-shrink: 0;
+  content: ""; width: 34px; height: 1px; background: var(--acid); flex-shrink: 0;
 }
 .panel h1, .panel h2 {
   font-family: var(--f-display);
@@ -2188,7 +2188,7 @@ a.gallery-tile { text-decoration: none; }
      is measured in `ch`, so a larger font widens the text block and the card needs the
      extra room to stay hugged to its content rather than re-opening a gap of dead glass. */
   .panel-overlay[data-active-section="home"] { width: min(36vw, 880px); }
-  .panel-home .eyebrow      { font-size: 14px; letter-spacing: 0.32em; }
+  .panel-home .eyebrow      { font-size: 16px; letter-spacing: 0.32em; }
   .panel-home h1            { font-size: clamp(42px, 7vmin, 104px); }
   .panel-home p             { font-size: 19px; line-height: 1.6; }
   .panel-home .meta-row     { font-size: 13px; gap: 30px; margin-top: 16px; }
