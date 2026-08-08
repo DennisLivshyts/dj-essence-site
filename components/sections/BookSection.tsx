@@ -98,18 +98,22 @@ export default function BookSection() {
     }
   }
 
+  const directContact = (
+    <div className="direct">
+      <div>EMAIL<b><a className="contact-email" href="mailto:djessence916@gmail.com">djessence916@gmail.com</a></b></div>
+      <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer">@djessence_official</a></b></div>
+    </div>
+  )
+
   if (status === 'sent') {
     return (
-      <div className="panel panel-book">
+      <div className="panel panel-book panel-book--sent">
         <div className="eyebrow">07 · Book</div>
         <div className="success-msg">
           <span className="check">✓</span>
           Request received — DJ Essence will be in touch shortly.
         </div>
-        <div className="direct">
-          <div>EMAIL<b><a className="contact-email" href="mailto:djessence916@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>djessence916@gmail.com</a></b></div>
-          <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>@djessence_official</a></b></div>
-        </div>
+        {directContact}
       </div>
     )
   }
@@ -118,64 +122,93 @@ export default function BookSection() {
 
   return (
     <div className="panel panel-book">
-      <div className="eyebrow">07 · Book</div>
-      <h2>Essence Events Booking Request</h2>
-      <form onSubmit={submit} noValidate>
-        <div className="two">
-          <div className="field">
-            <label>Your Name</label>
-            <input type="text" placeholder="Full name" value={form.name} onChange={e => update('name', e.target.value)} />
-            {errors.name && <span className="field-error">{errors.name}</span>}
-          </div>
-          <div className="field">
-            <label>Email</label>
-            <input type="email" placeholder="you@email.com" value={form.email} onChange={e => update('email', e.target.value)} />
-            {errors.email && <span className="field-error">{errors.email}</span>}
-          </div>
-        </div>
-        <div className="two">
-          <div className="field">
-            <label>Phone</label>
-            <input type="tel" placeholder="555-555-5555" value={form.phone} onChange={e => update('phone', e.target.value)} />
-            {errors.phone && <span className="field-error">{errors.phone}</span>}
-          </div>
-          <div className="field">
-            <label>Event Date</label>
-            <input type="date" min={today} value={form.eventDate} onChange={e => update('eventDate', e.target.value)} />
-            {errors.eventDate && <span className="field-error">{errors.eventDate}</span>}
-          </div>
-        </div>
-        <div className="two">
-          <div className="field">
-            <label>Event Type</label>
-            <select value={form.eventType} onChange={e => updateEventType(e.target.value)}>
-              <option value="">Select…</option>
-              {EVENT_TYPES.map((t: string) => <option key={t}>{t}</option>)}
-            </select>
-            {form.eventType === 'Other' && (
-              <input
-                ref={otherRef}
-                type="text"
-                className="field-other"
-                placeholder="What kind of event?"
-                maxLength={OTHER_MAX}
-                value={form.eventTypeOther}
-                onChange={e => update('eventTypeOther', e.target.value)}
+      <div className="book-head">
+        <div className="eyebrow">07 · Book</div>
+        {/* The italic accent goes last, as it does in every other section heading —
+            mid-string, the italic's overhang swallows the following space. */}
+        <h2>Request <em>your date</em></h2>
+        <p className="book-lede">
+          Every event is quoted individually — send the details, get a number back.
+        </p>
+      </div>
+
+      <form onSubmit={submit} noValidate className="book-form">
+        {/* Three short blocks rather than one long column: at full-bleed width the old
+            stacked layout left most of the card empty and pushed the submit button below
+            the fold. Collapses back to a single column below 1100px. */}
+        <div className="book-grid">
+          <section className="book-block">
+            <h3 className="book-block-title"><b>01</b>Your details</h3>
+            <div className="field">
+              <label htmlFor="bk-name">Your Name</label>
+              <input id="bk-name" type="text" autoComplete="name" placeholder="Full name" value={form.name} onChange={e => update('name', e.target.value)} />
+              {errors.name && <span className="field-error">{errors.name}</span>}
+            </div>
+            <div className="field">
+              <label htmlFor="bk-email">Email</label>
+              <input id="bk-email" type="email" autoComplete="email" placeholder="you@email.com" value={form.email} onChange={e => update('email', e.target.value)} />
+              {errors.email && <span className="field-error">{errors.email}</span>}
+            </div>
+            <div className="field">
+              <label htmlFor="bk-phone">Phone</label>
+              <input id="bk-phone" type="tel" autoComplete="tel" placeholder="555-555-5555" value={form.phone} onChange={e => update('phone', e.target.value)} />
+              {errors.phone && <span className="field-error">{errors.phone}</span>}
+            </div>
+          </section>
+
+          <section className="book-block">
+            <h3 className="book-block-title"><b>02</b>The event</h3>
+            <div className="field">
+              <label htmlFor="bk-date">Event Date</label>
+              <input id="bk-date" type="date" min={today} value={form.eventDate} onChange={e => update('eventDate', e.target.value)} />
+              {errors.eventDate && <span className="field-error">{errors.eventDate}</span>}
+            </div>
+            <div className="field">
+              <label htmlFor="bk-type">Event Type</label>
+              <select id="bk-type" value={form.eventType} onChange={e => updateEventType(e.target.value)}>
+                <option value="">Select…</option>
+                {EVENT_TYPES.map((t: string) => <option key={t}>{t}</option>)}
+              </select>
+              {form.eventType === 'Other' && (
+                <input
+                  ref={otherRef}
+                  type="text"
+                  className="field-other"
+                  aria-label="What kind of event?"
+                  placeholder="What kind of event?"
+                  maxLength={OTHER_MAX}
+                  value={form.eventTypeOther}
+                  onChange={e => update('eventTypeOther', e.target.value)}
+                />
+              )}
+              {errors.eventType && <span className="field-error">{errors.eventType}</span>}
+              {errors.eventTypeOther && <span className="field-error">{errors.eventTypeOther}</span>}
+            </div>
+            <div className="field">
+              <label htmlFor="bk-venue">Venue Address</label>
+              <input id="bk-venue" type="text" placeholder="Venue name + street, city" value={form.venue} onChange={e => update('venue', e.target.value)} />
+              {errors.venue && <span className="field-error">{errors.venue}</span>}
+            </div>
+          </section>
+
+          <section className="book-block book-block--note">
+            <h3 className="book-block-title"><b>03</b>Anything else</h3>
+            <div className="field field--grow">
+              <label htmlFor="bk-msg">Message <span className="field-opt">optional</span></label>
+              <textarea
+                id="bk-msg"
+                placeholder="Guest count, timings, a song you have to hear, anything you already know…"
+                value={form.message}
+                onChange={e => update('message', e.target.value)}
               />
-            )}
-            {errors.eventType && <span className="field-error">{errors.eventType}</span>}
-            {errors.eventTypeOther && <span className="field-error">{errors.eventTypeOther}</span>}
-          </div>
-          <div className="field">
-            <label>Venue Address</label>
-            <input type="text" placeholder="Venue name + street, city" value={form.venue} onChange={e => update('venue', e.target.value)} />
-            {errors.venue && <span className="field-error">{errors.venue}</span>}
-          </div>
+            </div>
+          </section>
         </div>
+
         {/* Real radios behind styled labels: keyboard nav, arrow-key cycling and
             screen-reader grouping all come free, which a div-with-onClick would not give. */}
         <fieldset className="pick-field">
-          <legend>Package</legend>
+          <legend><b>04</b>Choose a package</legend>
           <div className="pick-group">
             {[...PACKAGES.map(p => ({ name: p.name, hint: p.tagline })),
               { name: PACKAGE_UNDECIDED, hint: 'Help me choose' }].map(opt => (
@@ -200,7 +233,8 @@ export default function BookSection() {
 
         <fieldset className="pick-field pick-field--addons">
           <legend>
-            Add‑ons <span className="pick-optional">optional · not in any package</span>
+            <b>05</b>Add‑ons
+            <span className="pick-optional">optional · not included in any package</span>
             {form.addOns.length > 0 && <span className="pick-count">{form.addOns.length} selected</span>}
           </legend>
           <div className="pick-scroll">
@@ -228,24 +262,21 @@ export default function BookSection() {
           </div>
         </fieldset>
 
-        <div className="field">
-          <label>Message (optional)</label>
-          <textarea rows={2} placeholder="Any details…" value={form.message} onChange={e => update('message', e.target.value)} />
+        <div className="book-foot">
+          {directContact}
+          <div className="book-foot-action">
+            {status === 'error' && (
+              <p className="book-error">
+                Something went wrong — <a href="mailto:djessence916@gmail.com">email djessence916@gmail.com</a>
+              </p>
+            )}
+            <button type="submit" className="submit-btn" disabled={status === 'loading'}>
+              <span>{status === 'loading' ? 'SENDING…' : 'REQUEST BOOKING'}</span>
+              <span>→</span>
+            </button>
+          </div>
         </div>
-        {status === 'error' && (
-          <p style={{ color: 'var(--magenta)', fontFamily: 'var(--f-mono)', fontSize: 11 }}>
-            Something went wrong — <a href="mailto:djessence916@gmail.com" style={{ color: 'inherit' }}>email djessence916@gmail.com</a>
-          </p>
-        )}
-        <button type="submit" className="submit-btn" disabled={status === 'loading'}>
-          <span>{status === 'loading' ? 'SENDING…' : 'REQUEST BOOKING'}</span>
-          <span>→</span>
-        </button>
       </form>
-      <div className="direct">
-        <div>EMAIL<b><a className="contact-email" href="mailto:djessence916@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>djessence916@gmail.com</a></b></div>
-        <div>INSTAGRAM<b><a href="https://instagram.com/djessence_official" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>@djessence_official</a></b></div>
-      </div>
     </div>
   )
 }

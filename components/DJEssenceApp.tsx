@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Nav from '@/components/Nav'
 import Preloader from '@/components/Preloader'
 import FXLayer from '@/components/FXLayer'
@@ -28,6 +28,18 @@ const N = SECTIONS.length
 // Derived, not hardcoded — adding or reordering a section must not silently
 // point the Services CTA at the wrong panel.
 const BOOK_IDX = SECTIONS.findIndex(s => s.id === 'book')
+
+/* ===== "END OF SIDE" TRANSITION =====
+   Book is the last track on the record, so the way into it is the record ending:
+   the platter coasts to a stop, the tonearm returns to its rest, the room dims and
+   the disc leaves the stage — and only then does the booking panel open out to full
+   width. Everything is scrubbed from scroll position, so it plays backwards on the
+   way out and never gets stuck half-finished.
+
+   LEG_START is the scrollProgress at which Reviews is fully active; the leg runs from
+   there to 1.0 (Book fully active). The section cross-fade hands over at its midpoint. */
+const LEG_START = (BOOK_IDX - 1) / (N - 1)
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 
 export default function DJEssenceApp() {
   const [scrollProgress, setScrollProgress]   = useState(0)
@@ -215,6 +227,28 @@ export default function DJEssenceApp() {
   const activeIdx        = isMobile ? mobileActiveIdx : desktopActiveIdx
   const current          = SECTIONS[activeIdx]
 
+  // Derived from scrollProgress, deliberately not state — there is nothing to store.
+  // Mobile has its own scroll model (a snap container, not page scroll) and no split
+  // layout to open out of, so the whole transition is desktop-only.
+  const bookP = isMobile ? 0 : clamp01((scrollProgress - LEG_START) / (1 - LEG_START))
+  const exitP = bookP * bookP * (3 - 2 * bookP)   // smoothstep — the disc leaving
+  const haltP = 1 - Math.pow(1 - bookP, 3)        // ease-out — rotation coasting down
+
+  // Rotation is normally a flat scrollProgress * 540 (1.5 turns across the page). Over
+  // the final leg it eases into its last 90° instead, so the record slows and settles
+  // rather than being cut off mid-spin. The two expressions agree exactly at bookP = 0,
+  // so there is no seam where one takes over from the other.
+  const recordRotation = bookP > 0
+    ? LEG_START * 540 + (540 - LEG_START * 540) * haltP
+    : scrollProgress * 540
+
+  // Panel expansion is held back to the SECOND HALF of the leg. That midpoint is exactly
+  // where the cross-fade hands over to Book, so the panel starts growing from the same
+  // 36vw every other section uses — no jump, in either scroll direction.
+  const panelP = clamp01((bookP - 0.5) * 2)
+
+  const stageVars = { '--bookp': bookP.toFixed(4), '--panelp': panelP.toFixed(4) } as CSSProperties
+
   const goTo = (i: number) => {
     if (isMobile && mobileScrollRef.current) {
       mobileScrollRef.current.scrollTo({
@@ -233,7 +267,7 @@ export default function DJEssenceApp() {
         style={isMobile ? { height: 0 } : isLaptop ? { height: '1200vh' } : undefined}
       />
 
-      <div className="site-viewport">
+      <div className="site-viewport" style={stageVars}>
 
         {/* Club atmosphere */}
         <div className="vinyl-atmos" ref={atmosRef} aria-hidden>
@@ -264,23 +298,35 @@ export default function DJEssenceApp() {
         </div>
 
         {/* Spinning vinyl — ref-driven on mobile (no React state), tilt on desktop */}
+        {/* FOUR transform levels, one job each — combining any two of them on a single
+            element reintroduces the scroll-lag vs. spring conflict this split exists to
+            avoid. stage: perspective · exit: end-of-side departure (scrubbed, no
+            transition) · tilt: mouse parallax (sprung) · vinyl: scroll rotation (instant). */}
         <div className="vinyl-stage">
           <div
-            className="vinyl-tilt"
+            className="vinyl-exit"
             style={isMobile ? undefined : {
-              transform: `rotateX(${-tilt.y * 5}deg) rotateY(${tilt.x * 5}deg)`,
+              transform: `translate(${(45 * exitP).toFixed(2)}vw, ${(12 * exitP).toFixed(2)}vh) scale(${(1 - 0.18 * exitP).toFixed(4)})`,
+              opacity: 1 - exitP,
             }}
           >
             <div
-              className="vinyl"
-              ref={isMobile ? mobileVinylRef : undefined}
-              style={isMobile ? {} : { transform: `rotate(${scrollProgress * 540}deg)` }}
+              className="vinyl-tilt"
+              style={isMobile ? undefined : {
+                transform: `rotateX(${-tilt.y * 5}deg) rotateY(${tilt.x * 5}deg)`,
+              }}
             >
-              <div className="grooves" />
-              <div className="light-sheen" />
-              <div className="center-label" style={{ background: current.color }}>
-                <img src="/djEssenceSymbol.png" alt="" className="vinyl-label-symbol" />
-                <span className="vinyl-label-sub">{current.sub}</span>
+              <div
+                className="vinyl"
+                ref={isMobile ? mobileVinylRef : undefined}
+                style={isMobile ? {} : { transform: `rotate(${recordRotation.toFixed(2)}deg)` }}
+              >
+                <div className="grooves" />
+                <div className="light-sheen" />
+                <div className="center-label" style={{ background: current.color }}>
+                  <img src="/djEssenceSymbol.png" alt="" className="vinyl-label-symbol" />
+                  <span className="vinyl-label-sub">{current.sub}</span>
+                </div>
               </div>
             </div>
           </div>

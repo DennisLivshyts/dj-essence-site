@@ -189,6 +189,10 @@ body::after {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  /* House lights: the club FX dim out as the record winds down into Book. Driven by
+     opacity only — the perf work in this layer moved everything off filter/animation
+     recalc for exactly this reason, so don't reach for filter here. */
+  opacity: calc(1 - var(--bookp, 0) * 0.88);
 }
 
 /* Sweeps: JS sets transform each frame. CSS only provides position + background. */
@@ -331,6 +335,25 @@ body::after {
   z-index: 1;
   pointer-events: none;
   perspective: 900px; /* enables parallax 3-D tilt */
+}
+
+/* "End of side" departure wrapper — carries the scroll-scrubbed translate/scale that
+   walks the record off the stage as you enter Book. Deliberately NO transition: it is
+   driven straight from scroll position and must not lag behind it.
+
+   transform-style: preserve-3d is load-bearing. `perspective` on .vinyl-stage only
+   reaches its DIRECT children, so inserting this wrapper would otherwise flatten
+   .vinyl-tilt's rotateX/Y and kill the mouse parallax entirely. preserve-3d passes the
+   stage's 3-D context through to the tilt. (Once opacity drops below 1 the group does
+   flatten — that is fine, the disc is sliding off screen by then.)
+
+   It is also the grid item now, so margin-left (the 70vw centring, see the ≥1100px
+   block) lives here rather than on .vinyl-tilt. The resulting geometry is identical. */
+.vinyl-exit {
+  position: relative;
+  line-height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 /* Parallax tilt wrapper — receives mouse-driven rotateX/Y, transitions smoothly */
@@ -1202,22 +1225,54 @@ a.gallery-tile { text-decoration: none; }
 }
 .panel-reviews blockquote cite b { color: var(--acid); font-weight: 500; }
 
-/* BOOK */
-.panel-book form {
-  display: flex; flex-direction: column; gap: 10px;
+/* BOOK
+   Structure: a titled block per step (01 details · 02 event · 03 note · 04 package ·
+   05 add-ons) then a footer bar. Single column by default; the ≥1100px block near the
+   bottom of this file lays the same markup out across the full-bleed card. */
+.panel-book .book-head { display: flex; flex-direction: column; gap: 8px; }
+.panel-book .book-lede {
+  font-size: 13px; line-height: 1.55;
+  color: var(--ink-dim);
 }
-.panel-book .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.panel-book .book-form { display: flex; flex-direction: column; gap: 15px; }
+.panel-book .book-grid { display: flex; flex-direction: column; gap: 15px; }
+.panel-book .book-block {
+  display: flex; flex-direction: column; gap: 10px;
+  min-width: 0;   /* grid/flex children default to min-content — without this a long
+                     placeholder or address stretches the whole column */
+}
+/* One shared header treatment for the plain blocks and the two fieldsets, so all five
+   steps read as the same kind of thing. legend gets width:100% because it shrink-wraps
+   by default and the rule below hangs an underline off it. */
+.panel-book .book-block-title,
+.panel-book .pick-field legend {
+  display: flex; align-items: baseline; gap: 9px;
+  width: 100%;
+  font-family: var(--f-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 0; padding: 0 0 7px;
+  border-bottom: 1px solid var(--line);
+}
+.panel-book .book-block-title b,
+.panel-book .pick-field legend b {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; color: var(--acid);
+}
 .panel-book .field {
   display: flex; flex-direction: column; gap: 4px;
   border-bottom: 1px solid var(--line); padding-bottom: 6px;
   transition: border-color 160ms;
 }
+.panel-book .field--grow { flex: 1; }
+.panel-book .field--grow textarea { flex: 1; min-height: 76px; }
 .panel-book .field:focus-within { border-color: var(--acid); }
 .panel-book .field label {
   font-family: var(--f-mono); font-size: 9px;
   color: var(--ink-dim); letter-spacing: 0.25em;
   text-transform: uppercase;
 }
+.panel-book .field-opt { opacity: 0.55; letter-spacing: 0.12em; }
 .panel-book .field input,
 .panel-book .field textarea,
 .panel-book .field select {
@@ -1247,20 +1302,19 @@ a.gallery-tile { text-decoration: none; }
 /* ── Click-select package / add-on pickers ──
    The native input stays in the DOM (never display:none) so it remains focusable
    and announced; it's visually hidden and the label is what gets styled. */
+/* Left as a block box on purpose: `display:flex` on a fieldset pulls the rendered
+   legend out of the flex flow and browsers disagree about the result. Plain margin. */
 .panel-book .pick-field {
   border: 0; padding: 0; margin: 0;
-  border-bottom: 1px solid var(--line); padding-bottom: 10px;
 }
-.panel-book .pick-field legend {
-  font-family: var(--f-mono); font-size: 9px;
-  color: var(--ink-dim); letter-spacing: 0.25em;
-  text-transform: uppercase; padding: 0; margin-bottom: 7px;
-}
+.panel-book .pick-field legend { margin-bottom: 10px; }
 .pick-optional {
   letter-spacing: 0.12em; opacity: 0.65; text-transform: none;
 }
+/* Pushed to the far end of the legend so the running count reads as a status, not as
+   more of the label. */
 .pick-count {
-  letter-spacing: 0.12em; color: var(--acid); margin-left: 8px;
+  letter-spacing: 0.12em; color: var(--acid); margin-left: auto;
 }
 /* Fifteen add-ons is tall. On the vinyl-scroll layouts the panel scrolls, but
    .mobile-section is height:100vh + overflow:hidden, so an uncapped list would be
@@ -1340,17 +1394,43 @@ a.gallery-tile { text-decoration: none; }
 .panel-book .submit-btn:hover { transform: translate(-3px,-3px); box-shadow: 6px 6px 0 var(--magenta); }
 [data-theme="light"] .panel-book .submit-btn { color: #fff; }
 .panel-book .submit-btn:disabled { opacity: 0.6; pointer-events: none; }
+
+/* Footer bar: the two direct-contact routes on one side, the submit on the other, so a
+   visitor who would rather just email has that in the same eyeline as the button. */
+.panel-book .book-foot {
+  display: flex; flex-wrap: wrap;
+  gap: 14px 30px;
+  align-items: flex-end; justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+/* Capped, not flex:1 — left to grow it stretched the submit button to 919px on a
+   1584px screen, which reads as a banner rather than a button. */
+.panel-book .book-foot-action {
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 0 1 340px; min-width: 220px;
+}
+.panel-book .book-error {
+  font-family: var(--f-mono); font-size: 11px;
+  color: var(--magenta); margin: 0;
+}
+.panel-book .book-error a { color: inherit; }
 .panel-book .direct {
-  margin-top: 12px;
   display: flex; gap: 24px; flex-wrap: wrap;
   font-family: var(--f-mono); font-size: 11px;
   color: var(--ink-dim); letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
 }
+.panel-book .direct a { color: inherit; text-decoration: none; }
+.panel-book .direct a:hover { color: var(--acid); }
 .panel-book .direct b {
   display: block; color: var(--acid); font-size: 13px; margin-top: 3px; letter-spacing: 0.05em;
+}
+/* The success state has no footer bar to sit in, so it carries its own rule */
+.panel-book--sent .direct {
+  justify-content: center;
+  padding-top: 14px; margin-top: 4px;
+  border-top: 1px solid var(--line);
 }
 .success-msg {
   text-align: center;
@@ -1375,7 +1455,12 @@ a.gallery-tile { text-decoration: none; }
   width: 32vmin; height: 32vmin;
   pointer-events: none;
   transform-origin: 86% 14%;
-  transform: rotate(22deg);
+  /* Rest position is 22° (needle down, over the record). As the last track runs out the
+     arm lifts and swings back off the disc — the one moment this decoration gets to
+     behave like a real tonearm. Scrubbed from scroll, so no transition. */
+  transform:
+    translateY(calc(var(--bookp, 0) * -2vmin))
+    rotate(calc(22deg - var(--bookp, 0) * 34deg));
   z-index: 5;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
 }
@@ -1403,6 +1488,8 @@ a.gallery-tile { text-decoration: none; }
   width: 2px; height: 10px;
   background: var(--acid);
   box-shadow: 0 0 8px var(--acid);
+  /* Needle glow dies as the arm comes off the record */
+  opacity: calc(1 - var(--bookp, 0));
 }
 
 /* ========== SIDE HUD ========== */
@@ -1410,6 +1497,9 @@ a.gallery-tile { text-decoration: none; }
   position: fixed;
   bottom: 52px; left: 24px;
   z-index: 20;
+  /* Fades out with the record — it sits at 70vw in the split layout, directly under
+     where the booking panel expands to. */
+  opacity: calc(1 - var(--bookp, 0));
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.2em;
@@ -1477,6 +1567,9 @@ a.gallery-tile { text-decoration: none; }
   align-items: flex-end;
   height: 36px;
   pointer-events: none;
+  /* Deck powers down with the record — and the full-bleed booking panel needs the
+     bottom corners back, since it spans 4vw–96vw once it opens out. */
+  opacity: calc(1 - var(--bookp, 0));
 }
 .vu-bar {
   width: 4px;
@@ -2076,8 +2169,25 @@ a.gallery-tile { text-decoration: none; }
   /* Reviews */
   .panel-reviews .quotes { grid-template-columns: 1fr; }
 
-  /* Book form */
-  .panel-book .two { grid-template-columns: 1fr; }
+  /* Book form — .book-grid is already a single column at this width. The step headers
+     and lede are pure chrome, and on a phone they cost rows the form genuinely cannot
+     spare: .mobile-section is a fixed 100dvh, so everything they push down has to be
+     reached by scrolling .mobile-content. The lede goes entirely (the same promise is
+     on the Services CTA) and the headers are squeezed to a single tight line. */
+  .panel-book .book-lede { display: none; }
+  .panel-book .book-block-title,
+  .panel-book .pick-field legend {
+    font-size: 9px; letter-spacing: 0.18em;
+    padding-bottom: 4px; gap: 7px;
+  }
+  .panel-book .book-block-title b,
+  .panel-book .pick-field legend b { font-size: 9px; }
+  .panel-book .pick-field legend { margin-bottom: 7px; }
+  .panel-book .book-form { gap: 11px; }
+  .panel-book .book-grid { gap: 11px; }
+  .panel-book .book-block { gap: 8px; }
+  .panel-book .field--grow textarea { min-height: 52px; }
+  .panel-book .book-foot { padding-top: 10px; gap: 10px 20px; }
 }
 
 /* ========== SPLIT LAYOUT — every screen ≥1100px wide (panel left / vinyl right) ========== */
@@ -2120,8 +2230,10 @@ a.gallery-tile { text-decoration: none; }
   .vinyl-tilt {
     width: min(90vmin, 56vw);
     height: min(90vmin, 56vw);
-    margin-left: 40vw;
   }
+  /* The offset sits on the exit wrapper because that is the grid item. place-items:center
+     centres its MARGIN box, so 50vw + 40vw/2 = 70vw exactly as before. */
+  .vinyl-exit { margin-left: 40vw; }
 
   /* Panel: 4vw margin + 36vw wide → right edge at 40vw, leaving the disc the larger
      share. Proportional rather than the old clamp(300px, 36vw, 500px) — that 500px
@@ -2143,6 +2255,22 @@ a.gallery-tile { text-decoration: none; }
      Capping to ~content width makes the card hug its content instead. */
   .panel-overlay[data-active-section="home"] {
     width: min(36vw, 700px);
+  }
+  /* Book is the one section that takes the whole stage. The record has walked off to
+     the right by the time this engages, so there is nothing left to collide with.
+     --panelp is 0 at the exact frame the cross-fade hands over from Reviews, so the
+     card starts at the shared 36vw and grows from there — no jump either direction.
+     transition:none is required: this is scrubbed frame-by-frame from scroll, and the
+     inherited `transition: width 350ms` would smear every update into mush. */
+  .panel-overlay[data-active-section="book"] {
+    /* Scrubs left/right rather than width, deliberately. `width: 100vw` on a page that
+       always has a vertical scrollbar (the scroll-driver is 1200vh) overflows by the
+       scrollbar's width; left/right on a fixed element resolve against the LAYOUT
+       viewport, which already excludes it. So this lands flush on both edges. */
+    left:  calc(4vw  * (1 - var(--panelp, 0)));   /* 4vw  → 0  */
+    right: calc(60vw * (1 - var(--panelp, 0)));   /* 60vw → 0  ⇒ 36vw → full width */
+    width: auto;
+    transition: none;
   }
   /* Body copy is capped independently of the card so that widening the panel to half
      the screen doesn't stretch paragraphs to 200-character lines on a wide monitor. */
@@ -2195,6 +2323,105 @@ a.gallery-tile { text-decoration: none; }
   .panel-home .meta-row b   { font-size: 17px; margin-top: 5px; }
   .panel-home .cta          { gap: 14px; margin-top: 24px; }
   .panel-home .cta button   { font-size: 14px; padding: 17px 28px; }
+}
+
+/* ===== BOOK — RESPONSIVE TO THE CARD, NOT THE VIEWPORT =====
+   These are @container queries on purpose, and swapping them back to @media would
+   reintroduce a real bug. The booking card's width is ANIMATED (36vw → 92vw) across the
+   end-of-side transition, so viewport width says nothing about how much room the form
+   actually has. Keyed to the viewport, the three-column layout was being applied at the
+   handover frame while the card was still 36vw wide: headings wrapped mid-word, the
+   textarea grew its own scrollbar and the add-on chips broke apart. Keyed to the
+   container, the form reflows 1 → 2 → 3 columns as the card opens, which is also a
+   better-looking transition than a hard swap. */
+.panel-book { container-type: inline-size; container-name: book; }
+
+/* Selectors keep their `.panel-book ` prefix: container queries add no specificity, so
+   a bare `.book-grid` here would lose to the base `.panel-book .book-grid` rule. */
+@container book (min-width: 700px) {
+  .panel-book .book-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 18px 32px; align-items: stretch;
+  }
+  .panel-book .book-block--note { grid-column: 1 / -1; }
+  .panel-book .pick-scroll {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 4px 24px; align-items: start;
+  }
+  .panel-book .pick-subgroup + .pick-subgroup { margin-top: 0; }
+  /* Add-ons pack as content-width pills rather than full-width rows. One row per add-on
+     made this fieldset 384px tall on its own — taller than everything else combined —
+     because the longest group has seven entries. Packing them cuts it to roughly a
+     third of that and matches the chip language the Services section already uses. */
+  .panel-book .pick--addon { flex: 0 1 auto; }
+  .panel-book .pick--addon label { padding: 7px 12px; }
+}
+
+@container book (min-width: 1000px) {
+  /* Steps 01–03 side by side. Three short columns beat one long one here — stacked, the
+     form filled a third of the card and pushed the submit button off the bottom. */
+  .panel-book .book-grid { grid-template-columns: 1fr 1fr 1fr; gap: 20px 38px; }
+  .panel-book .book-block--note { grid-column: auto; }
+  /* All fifteen add-ons visible at once in their three groups — no inner scroller, which
+     is what the narrow layout has to fall back on. */
+  .panel-book .pick-scroll { grid-template-columns: repeat(3, 1fr); gap: 4px 26px; }
+  /* Vertical rhythm is tuned so the whole form clears a 900px-tall viewport without the
+     panel driver having to scroll it — once it scrolls, the eyebrow slides under the
+     fixed nav, which reads as broken. Shorter screens still scroll; that is unavoidable. */
+  .panel-book .book-form { gap: 11px; }
+  .panel-book .pick--addon label { padding: 6px 12px; }
+  /* Overrides .panel-glass p { max-width: 64ch } for this one line of copy, which is
+     shorter than that cap and should sit on a single line on a full-bleed card. */
+  .panel-book .book-lede { max-width: 100ch; }
+
+  /* Legibility. The 8–9px monospace chrome was sized for a 36vw column; across a 92vw
+     card it reads as noise. Every step up is listed here rather than changing the base
+     values, so the narrow and mobile layouts are untouched. */
+  .panel-book .field label,
+  .panel-book .book-block-title,
+  .panel-book .pick-field legend    { font-size: 11px; }
+  .panel-book .pick-subgroup-name   { font-size: 10px; }
+  .panel-book .field input,
+  .panel-book .field textarea,
+  .panel-book .field select         { font-size: 16px; }
+  .panel-book .field .field-other   { font-size: 15px; }
+  .panel-book .field-error          { font-size: 10px; }
+  .panel-book .book-lede            { font-size: 15px; }
+  .panel-book .pick-name            { font-size: 15px; }
+  .panel-book .pick--addon .pick-name { font-size: 13px; }
+  .panel-book .pick-hint            { font-size: 11px; }
+  .panel-book .pick label           { padding: 12px 14px; }
+  .panel-book .direct               { font-size: 12px; }
+  .panel-book .direct b             { font-size: 15px; }
+  .panel-book .submit-btn           { font-size: 14px; padding: 18px 26px; }
+  .panel-book .field--grow textarea { min-height: 110px; }
+}
+
+@media (min-width: 1100px) {
+  /* Book fills the viewport outright at the end of the transition — it is a page, not a
+     card. min-height and max-height both reach 100vh at --panelp 1, so the glass is
+     exactly viewport-height; at 0 the min collapses and normal content sizing applies.
+     Stays a media query: a container query cannot style the element that establishes the
+     container, and the container (.panel-book) lives inside .panel-glass. */
+  .panel-overlay[data-active-section="book"] .panel-glass {
+    min-height: calc(var(--panelp, 0) * 100vh);
+    max-height: calc(84vh + var(--panelp, 0) * 16vh);
+    /* Padding opens up with the card. The top and bottom values are not decorative —
+       they are clearance. Measured: the fixed Nav is 83px tall and the StatsMarquee is
+       45px, and both paint ABOVE this panel, so at anything less the eyebrow slides
+       under the nav and the submit bar under the marquee. */
+    padding:
+      calc(26px + var(--panelp, 0) * 69px)   /* → 95px, clears the 83px nav */
+      calc(46px + var(--panelp, 0) * 28px)
+      calc(26px + var(--panelp, 0) * 26px);  /* → 52px, clears the 45px marquee */
+    display: flex;
+    flex-direction: column;
+  }
+  /* With the card taller than the form, the submit bar drops to the bottom edge instead
+     of leaving a slab of dead glass under it. */
+  .panel-overlay[data-active-section="book"] .panel-book,
+  .panel-overlay[data-active-section="book"] .book-form { flex: 1; }
+  .panel-overlay[data-active-section="book"] .book-foot { margin-top: auto; }
 }
 
 /* ========== STATS MARQUEE ========== */
