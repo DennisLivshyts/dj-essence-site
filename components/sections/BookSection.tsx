@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { EVENT_TYPES, PACKAGES, ADDONS, ADDON_GROUPS, PACKAGE_UNDECIDED } from '@/lib/bookingOptions'
+import Sheet from '@/components/ui/Sheet'
+
+interface Props {
+  /** Mobile. The package and add-on pickers move into sheets and the duplicated contact
+   *  block is dropped, which is what gets this form inside one 100dvh section. */
+  compact?: boolean
+}
 
 interface FormState {
   name: string
@@ -43,10 +50,12 @@ function validate(f: FormState): Record<string, string> {
   return e
 }
 
-export default function BookSection() {
+export default function BookSection({ compact = false }: Props) {
   const [form, setForm] = useState<FormState>(INITIAL)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
+  const [pkgSheet, setPkgSheet] = useState(false)
+  const [addonSheet, setAddonSheet] = useState(false)
   const otherRef = useRef<HTMLInputElement>(null)
 
   // Focus the free-text box when "Other" is picked. `preventScroll` matters here:
@@ -97,6 +106,57 @@ export default function BookSection() {
       setStatus('error')
     }
   }
+
+  // Extracted so the same controls render either inline (desktop) or inside a sheet
+  // (mobile) without duplicating the markup — and so both paths stay real radios and
+  // checkboxes, which is where the keyboard nav and screen-reader grouping come from.
+  const packageGroup = (
+    <div className="pick-group">
+      {[...PACKAGES.map(p => ({ name: p.name, hint: p.tagline })),
+        { name: PACKAGE_UNDECIDED, hint: 'Help me choose' }].map(opt => (
+        <div key={opt.name} className="pick">
+          <input
+            type="radio"
+            name="pkg"
+            id={`pkg-${opt.name}`}
+            value={opt.name}
+            checked={form.pkg === opt.name}
+            onChange={() => update('pkg', opt.name)}
+          />
+          <label htmlFor={`pkg-${opt.name}`}>
+            <span className="pick-name">{opt.name}</span>
+            <span className="pick-hint">{opt.hint}</span>
+          </label>
+        </div>
+      ))}
+    </div>
+  )
+
+  const addonGroup = (
+    <div className="pick-scroll">
+      {ADDON_GROUPS.map(g => (
+        <div key={g} className="pick-subgroup">
+          <div className="pick-subgroup-name">{g}</div>
+          <div className="pick-group">
+            {ADDONS.filter(a => a.group === g).map(a => (
+              <div key={a.id} className="pick pick--addon">
+                <input
+                  type="checkbox"
+                  id={`addon-${a.id}`}
+                  checked={form.addOns.includes(a.name)}
+                  onChange={() => toggleAddOn(a.name)}
+                />
+                <label htmlFor={`addon-${a.id}`}>
+                  <span className="pick-check" aria-hidden>✓</span>
+                  <span className="pick-name">{a.name}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 
   const directContact = (
     <div className="direct">
@@ -205,65 +265,55 @@ export default function BookSection() {
           </section>
         </div>
 
-        {/* Real radios behind styled labels: keyboard nav, arrow-key cycling and
-            screen-reader grouping all come free, which a div-with-onClick would not give. */}
-        <fieldset className="pick-field">
-          <legend><b>04</b>Choose a package</legend>
-          <div className="pick-group">
-            {[...PACKAGES.map(p => ({ name: p.name, hint: p.tagline })),
-              { name: PACKAGE_UNDECIDED, hint: 'Help me choose' }].map(opt => (
-              <div key={opt.name} className="pick">
-                <input
-                  type="radio"
-                  name="pkg"
-                  id={`pkg-${opt.name}`}
-                  value={opt.name}
-                  checked={form.pkg === opt.name}
-                  onChange={() => update('pkg', opt.name)}
-                />
-                <label htmlFor={`pkg-${opt.name}`}>
-                  <span className="pick-name">{opt.name}</span>
-                  <span className="pick-hint">{opt.hint}</span>
-                </label>
-              </div>
-            ))}
-          </div>
-          {errors.pkg && <span className="field-error">{errors.pkg}</span>}
-        </fieldset>
+        {/* Mobile: these two pickers are 315px of a form that overflows its section by
+            385px, and the add-on list carried its own capped inner scroller on top of
+            that — a hidden scroll area nested inside a hidden scroll area. Both collapse
+            to a one-line row that opens a sheet and shows the current selection at rest. */}
+        {compact && (
+          <>
+            <button type="button" className="picker-row" onClick={() => setPkgSheet(true)}>
+              <span className="picker-row-label">Package</span>
+              <span className={`picker-row-value${form.pkg ? '' : ' is-empty'}`}>
+                {form.pkg || 'Choose…'}
+              </span>
+              <span className="picker-row-chevron" aria-hidden>▸</span>
+            </button>
+            {errors.pkg && <span className="field-error">{errors.pkg}</span>}
 
-        <fieldset className="pick-field pick-field--addons">
+            <button type="button" className="picker-row" onClick={() => setAddonSheet(true)}>
+              <span className="picker-row-label">Add-ons <em>optional</em></span>
+              <span className={`picker-row-value${form.addOns.length ? '' : ' is-empty'}`}>
+                {form.addOns.length ? `${form.addOns.length} selected` : 'None'}
+              </span>
+              <span className="picker-row-chevron" aria-hidden>▸</span>
+            </button>
+          </>
+        )}
+
+        {/* Real radios behind styled labels: keyboard nav, arrow-key cycling and
+            screen-reader grouping all come free, which a div-with-onClick would not give.
+            The sheets below render the very same groups, so mobile keeps all of that. */}
+        {!compact && (
+          <fieldset className="pick-field">
+            <legend><b>04</b>Choose a package</legend>
+            {packageGroup}
+            {errors.pkg && <span className="field-error">{errors.pkg}</span>}
+          </fieldset>
+        )}
+
+        {!compact && <fieldset className="pick-field pick-field--addons">
           <legend>
             <b>05</b>Add‑ons
             <span className="pick-optional">optional · not included in any package</span>
             {form.addOns.length > 0 && <span className="pick-count">{form.addOns.length} selected</span>}
           </legend>
-          <div className="pick-scroll">
-            {ADDON_GROUPS.map(g => (
-              <div key={g} className="pick-subgroup">
-                <div className="pick-subgroup-name">{g}</div>
-                <div className="pick-group">
-                  {ADDONS.filter(a => a.group === g).map(a => (
-                    <div key={a.id} className="pick pick--addon">
-                      <input
-                        type="checkbox"
-                        id={`addon-${a.id}`}
-                        checked={form.addOns.includes(a.name)}
-                        onChange={() => toggleAddOn(a.name)}
-                      />
-                      <label htmlFor={`addon-${a.id}`}>
-                        <span className="pick-check" aria-hidden>✓</span>
-                        <span className="pick-name">{a.name}</span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </fieldset>
+          {addonGroup}
+        </fieldset>}
 
         <div className="book-foot">
-          {directContact}
+          {/* Dropped on mobile: it is 102px, and the same address already sits in the
+              Home meta row and the mobile menu. */}
+          {!compact && directContact}
           <div className="book-foot-action">
             {status === 'error' && (
               <p className="book-error">
@@ -277,6 +327,35 @@ export default function BookSection() {
           </div>
         </div>
       </form>
+
+      {/* Deliberately OUTSIDE <form>. Sheets portal to document.body, but React events
+          bubble through the REACT tree, not the DOM tree — rendered inside the form, a
+          stray button in here would bubble a click straight into submit. */}
+      <Sheet
+        open={pkgSheet}
+        onClose={() => setPkgSheet(false)}
+        title="Choose a package"
+        subtitle="Every event is quoted individually"
+        footer={
+          <button type="button" className="sheet-done" onClick={() => setPkgSheet(false)}>Done</button>
+        }
+      >
+        {packageGroup}
+      </Sheet>
+
+      <Sheet
+        open={addonSheet}
+        onClose={() => setAddonSheet(false)}
+        title="Add-ons"
+        subtitle={`Optional · not included in any package${form.addOns.length ? ` · ${form.addOns.length} selected` : ''}`}
+        footer={
+          <button type="button" className="sheet-done" onClick={() => setAddonSheet(false)}>
+            {form.addOns.length ? `Done · ${form.addOns.length} selected` : 'Done'}
+          </button>
+        }
+      >
+        {addonGroup}
+      </Sheet>
     </div>
   )
 }

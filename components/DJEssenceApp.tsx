@@ -338,13 +338,16 @@ export default function DJEssenceApp() {
             {SECTIONS.map((s, i) => (
               <div key={s.id} className="mobile-section">
                 <div className="mobile-content">
+                  {/* compact: mobile sections are locked to one 100dvh screen, so the
+                      sections that don't fit move their overflow into an explicit
+                      "See all" sheet instead of a hidden inner scrollbar. */}
                   {s.id === 'home'     && <HomeSection goTo={goTo} />}
                   {s.id === 'about'    && <AboutSection isActive={activeIdx === 1} />}
-                  {s.id === 'services' && <ServicesSection goToBook={() => goTo(BOOK_IDX)} />}
-                  {s.id === 'gallery'  && <GallerySection />}
-                  {s.id === 'photos'   && <PhotosSection />}
+                  {s.id === 'services' && <ServicesSection goToBook={() => goTo(BOOK_IDX)} compact />}
+                  {s.id === 'gallery'  && <GallerySection compact />}
+                  {s.id === 'photos'   && <PhotosSection compact />}
                   {s.id === 'reviews'  && <ReviewsSection />}
-                  {s.id === 'book'     && <BookSection />}
+                  {s.id === 'book'     && <BookSection compact />}
                 </div>
               </div>
             ))}
