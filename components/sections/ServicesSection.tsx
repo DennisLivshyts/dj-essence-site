@@ -72,29 +72,51 @@ export default function ServicesSection({ goToBook, compact = false }: Props) {
   const [showAddons, setShowAddons] = useState(false)
   const [showPkgs, setShowPkgs] = useState(false)
 
-  const packageCards = (
+  // Tiers 02 and 03 each spend a whole bullet on "Everything in <previous tier>". That is
+  // a cross-reference, not information, and on a phone it is a third of the card's height.
+  // Rendered as a small tag instead, the ladder reads MORE clearly in a fraction of the
+  // space. Matched on the data rather than by index so reordering PACKAGES can't break it.
+  const splitFeats = (feats: string[]) => ({
+    inherits: feats.some(f => /^Everything in /i.test(f)),
+    own: feats.filter(f => !/^Everything in /i.test(f)),
+  })
+
+  // `dense` is passed explicitly rather than read from `compact` so the sheet — which has
+  // room — can still show the full written-out list on the screens that open it.
+  const renderPackages = (dense: boolean) => (
     <div className="svc-pkg-grid">
-      {PACKAGES.map(p => (
-        <div key={p.id} className={`svc-pkg svc-pkg--${p.accent}`}>
-          <div className="svc-card-deco">
-            {p.deco === 'wave'  && <WaveDeco />}
-            {p.deco === 'knobs' && <KnobsDeco />}
-            {p.deco === 'beams' && <BeamsDeco />}
+      {PACKAGES.map(p => {
+        const { inherits, own } = splitFeats(p.feats)
+        return (
+          <div key={p.id} className={`svc-pkg svc-pkg--${p.accent}`}>
+            <div className="svc-card-deco">
+              {p.deco === 'wave'  && <WaveDeco />}
+              {p.deco === 'knobs' && <KnobsDeco />}
+              {p.deco === 'beams' && <BeamsDeco />}
+            </div>
+            <div className="svc-pkg-body">
+              <div className="svc-pkg-tier">Package {p.tier}</div>
+              <div className="svc-pkg-name">{p.name}</div>
+              <div className="svc-pkg-tagline">{p.tagline}</div>
+              {dense && inherits && <div className="svc-pkg-inherit">+ Everything above</div>}
+              <ul className="svc-pkg-feats">
+                {(dense ? own : p.feats).map(f => (
+                  <li key={f}><span className="svc-tick" aria-hidden>✓</span>{f}</li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <div className="svc-pkg-body">
-            <div className="svc-pkg-tier">Package {p.tier}</div>
-            <div className="svc-pkg-name">{p.name}</div>
-            <div className="svc-pkg-tagline">{p.tagline}</div>
-            <ul className="svc-pkg-feats">
-              {p.feats.map(f => (
-                <li key={f}><span className="svc-tick" aria-hidden>✓</span>{f}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
+
+  // Flat, ungrouped, still in group order so the colour clusters stay intact.
+  const addonChips = ADDONS.map(a => (
+    <span key={a.id} className={`svc-chip svc-chip--${ADDON_GROUP_ACCENT[a.group]}`}>
+      {a.name}
+    </span>
+  ))
 
   const addonGroups = (
     <>
@@ -125,7 +147,7 @@ export default function ServicesSection({ goToBook, compact = false }: Props) {
         Three ways to book
       </div>
 
-      {packageCards}
+      {renderPackages(compact)}
 
       {/* Short phones only (see the max-height block in globals.css). There the feature
           lists are hidden — three of them do not fit a 486px content box — so this is the
@@ -144,12 +166,17 @@ export default function ServicesSection({ goToBook, compact = false }: Props) {
         Add‑ons · not included in any package
       </div>
 
-      {compact ? (
-        <button type="button" className="see-all" onClick={() => setShowAddons(true)}>
-          <span>See all {ADDONS.length} add‑ons</span>
-          <span aria-hidden>→</span>
-        </button>
-      ) : addonGroups}
+      {/* Mobile shows all fifteen inline as one colour-coded cloud rather than hiding them
+          behind the button. The group HEADERS are what get dropped, not the add-ons —
+          every chip is already tinted by its group (magenta / acid / amber) and they stay
+          in group order, so the clusters still read without three header rows costing
+          ~48px. The button below only appears on short screens, where even this doesn't fit. */}
+      {compact ? <div className="svc-chip-cloud">{addonChips}</div> : addonGroups}
+
+      <button type="button" className="see-all see-all--addon" onClick={() => setShowAddons(true)}>
+        <span>See all {ADDONS.length} add‑ons</span>
+        <span aria-hidden>→</span>
+      </button>
 
       <div className="svc-cta">
         <span>Every event is quoted individually.</span>
@@ -162,7 +189,7 @@ export default function ServicesSection({ goToBook, compact = false }: Props) {
         title="Three ways to book"
         subtitle="Every event is quoted individually"
       >
-        <div className="svc-pkg-sheet">{packageCards}</div>
+        <div className="svc-pkg-sheet">{renderPackages(false)}</div>
       </Sheet>
 
       <Sheet

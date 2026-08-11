@@ -2036,7 +2036,10 @@ a.gallery-tile { text-decoration: none; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 80px 28px 52px;
+  /* Top padding clears the fixed mobile nav, which measures ~56px — 72px keeps a real
+     gap. Every pixel here is worth one in all seven sections at once, which is why it is
+     tuned rather than round. */
+  padding: 72px 28px 44px;
   position: relative;
   overflow: hidden;
 }
@@ -2132,16 +2135,21 @@ a.gallery-tile { text-decoration: none; }
      First thing to go when the budget is this tight. */
   .svc-pkg .svc-card-deco { display: none; }
 
-  .svc-pkg-body { padding: 9px 11px 10px; gap: 1px; }
+  .svc-pkg-body { padding: 8px 11px 9px; gap: 1px; }
   .svc-pkg-tier { font-size: 7.5px; }
   .svc-pkg-name { font-size: 15px; }
-  .svc-pkg-tagline { font-size: 10px; margin-bottom: 2px; }
-  .svc-pkg-feats { padding-top: 5px; gap: 2px; }
-  .svc-pkg-feats li { font-size: 9px; line-height: 1.3; }
+  .svc-pkg-tagline { font-size: 10px; margin-bottom: 1px; }
+  .svc-pkg-feats { padding-top: 4px; gap: 1px; }
+  .svc-pkg-feats li { font-size: 9px; line-height: 1.25; }
 
   /* Tighten the rest of the section to buy the packages their room */
   .panel-services h2 { margin-bottom: 2px; }
   .svc-row-label { margin-top: 10px; margin-bottom: 6px; font-size: 9px; }
+  /* "Three ways to book" is redundant on mobile — the three cards below it are literally
+     headed Package 01 / 02 / 03. The add-on label stays: "not included in any package"
+     is a claim Arman was specific about and nothing else on the section carries it. */
+  .svc-row-label--pkg { display: none; }
+  .svc-pkg-inherit { font-size: 8px; margin-bottom: 0; }
   .svc-addon-group + .svc-addon-group { margin-top: 7px; }
   .svc-addon-group-name { margin-bottom: 4px; }
   .svc-cta { margin-top: 10px; padding-top: 8px; }
@@ -2151,11 +2159,14 @@ a.gallery-tile { text-decoration: none; }
      fifteen chips were 282px of the section's height, the second-largest block after
      the packages, so they're tightened hard here. */
   .svc-addon-group .svc-chips { gap: 4px; }
-  .svc-chip { font-size: 10px; padding: 4px 8px; }
+  .svc-chip { font-size: 9.5px; padding: 3px 7px; }
   .svc-chip em { display: none; }   /* the "dry ice" clarifier costs a whole extra row */
+  /* Six rows of chips, so every pixel of gap is worth six. */
+  .svc-chip-cloud { gap: 4px; }
+  .svc-row-label--addon { margin-top: 8px; margin-bottom: 4px; }
 
   /* CTA wrapped to two lines at this width (69px); side-by-side and smaller instead */
-  .svc-cta { font-size: 9px; gap: 8px; }
+  .svc-cta { font-size: 9px; gap: 8px; margin-top: 8px; padding-top: 6px; }
   .svc-cta button { padding: 8px 12px; font-size: 9px; letter-spacing: 0.18em; }
 
   /* The add-on list used to be a 148px capped inner scroller here — a hidden scroll area
@@ -2222,13 +2233,12 @@ a.gallery-tile { text-decoration: none; }
   /* Services: tighten the package cards rather than dropping their feature lists — the
      features are the whole reason the tier ladder reads as a ladder. */
   .svc-pkg-body { padding: 9px 11px; gap: 3px; }
-  .svc-pkg-tagline { display: none; }   /* the feature list says it better and costs less */
-  /* Three feature lists are ~160px that a 486px content box simply does not have. They
-     move to the "See what's included" sheet, which only exists at this size. */
-  .panel-services .svc-pkg-feats { display: none; }
-  /* .panel-services scope is load-bearing: the base `.see-all--pkg { display: none }`
-     sits LATER in this file, so at equal specificity it would win over this override. */
-  .panel-services .see-all--pkg { display: flex; }
+  /* Only the chip cloud goes at this tier — measured, the feature lists still fit down to
+     ~740px and there is no reason to hide them above that.
+     .panel-services scope is load-bearing: the base `.see-all--* { display: none }` sits
+     LATER in this file, so at equal specificity it would win over these overrides. */
+  .panel-services .svc-chip-cloud { display: none; }
+  .panel-services .see-all--addon { display: flex; }
   .svc-row-label { font-size: 9px; }
   .svc-cta { gap: 6px; font-size: 9px; }
 
@@ -2248,6 +2258,18 @@ a.gallery-tile { text-decoration: none; }
   .panel-book .book-block { gap: 6px; }
   .panel-book .book-foot { padding-top: 8px; }
   .panel-book .submit-btn { padding: 11px 18px; margin-top: 2px; }
+}
+
+/* ===== VERY SHORT PHONES (375×667 SE / iPhone 8 class) =====
+   The second and last tier. Measured on a 667px screen: taglines and the "+ Everything
+   above" tag still fit, but the three feature lists put it 63px over. They are the only
+   thing that moves behind a button here — and only here.
+
+   Threshold is 740px because the crossover measures at roughly 730: a 780px screen fits
+   the feature lists with room to spare, a 667px one misses by 63. */
+@media (max-width: 820px) and (max-height: 740px) {
+  .panel-services .svc-pkg-feats { display: none; }
+  .panel-services .see-all--pkg { display: flex; }
 }
 
 /* ========== SPLIT LAYOUT — every screen ≥1100px wide (panel left / vinyl right) ========== */
@@ -2635,9 +2657,31 @@ a.gallery-tile { text-decoration: none; }
   grid-column: auto; grid-row: auto;
   aspect-ratio: 1;
 }
-/* Only short phones ever show this — the short-height block below flips it on. Anywhere
-   else the package feature lists are visible inline and the button would be noise. */
-.see-all--pkg { display: none; }
+/* Both of these are off by default and flipped on only where they are needed:
+   --pkg on short phones (where package features are hidden), --addon likewise (where the
+   inline chip cloud is hidden). Everywhere else the content is visible inline and a
+   button into a sheet would just be a second click for nothing. */
+.see-all--pkg,
+.see-all--addon { display: none; }
+
+/* "+ Everything above" — replaces the literal "Everything in <tier>" bullet on mobile.
+   Same meaning, one short tag instead of a full wrapped list row. */
+.svc-pkg-inherit {
+  font-family: var(--f-mono); font-size: 8px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-dim); opacity: 0.8;
+  margin-bottom: 1px;
+}
+.svc-pkg--acid    .svc-pkg-inherit { color: var(--acid); }
+.svc-pkg--magenta .svc-pkg-inherit { color: var(--magenta); }
+.svc-pkg--amber   .svc-pkg-inherit { color: var(--amber); }
+
+/* All fifteen add-ons, ungrouped but still in group order so the colour clusters read.
+   This is what the mobile section shows instead of a button into a sheet. */
+.svc-chip-cloud {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: 2px;
+}
 /* The sheet always shows the full ladder, including on the short screens whose section
    view hides it — that is the entire reason the sheet exists. */
 .svc-pkg-sheet .svc-pkg-grid { grid-template-columns: 1fr; gap: 12px; }
