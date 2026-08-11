@@ -18,11 +18,11 @@ interface Post {
 }
 
 // How many tiles the section itself shows before handing off to the sheet.
-// Mobile is 3 because that is literally what fits: the hero tile spans the full width of
-// a 2-column phone grid (~334px) and one more row of two (~163px) lands at ~505px, which
-// is what is left of the 712px content box after the heading and the See-all button.
+// Mobile is 4 in a uniform 2×2: the hero tile spans 2×2, so on a 2-column phone grid it
+// ate the entire width (~334px) to show ONE photo. Four uniform ~163px tiles occupy
+// almost exactly the same height and show four. The span is dropped on mobile in CSS.
 const VISIBLE_DESKTOP = 9
-const VISIBLE_MOBILE  = 3
+const VISIBLE_MOBILE  = 4
 
 const PLACEHOLDERS = [
   { label: 'FIRST DANCE' },

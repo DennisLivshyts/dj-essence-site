@@ -32,9 +32,9 @@ function tileLabel(photo: Photo): string {
 }
 
 // How many tiles the section shows before handing off to the sheet. See the matching
-// note in GallerySection — mobile is what physically fits one 100dvh section.
+// note in GallerySection — mobile is a uniform 2×2 rather than one full-width hero.
 const VISIBLE_DESKTOP = 9
-const VISIBLE_MOBILE  = 3
+const VISIBLE_MOBILE  = 4
 
 export default function PhotoWall({ compact = false }: Props) {
   const [photos, setPhotos] = useState<Photo[] | null>(null)

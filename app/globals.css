@@ -2175,8 +2175,13 @@ a.gallery-tile { text-decoration: none; }
      nothing left to cap. The sizing below applies in that sheet. */
   :is(.panel-book, .sheet) .pick--addon { flex: 1 1 46%; }
 
-  /* Gallery */
+  /* Gallery — NO hero tile on a phone. `.gallery-tile.a` spans 2×2, which in a 2-column
+     grid means it eats the full width and two rows to show a single photo. Four uniform
+     tiles take almost exactly the same height and show four. The 2×2 hero is a desktop
+     layout accent; on a phone it is just one big picture. */
   .panel-gallery .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  .panel-gallery .gallery-tile.a,
+  .photo-wall .gallery-tile.a { grid-column: auto; grid-row: auto; }
 
   /* Reviews */
   .panel-reviews .quotes { grid-template-columns: 1fr; }
@@ -2223,12 +2228,11 @@ a.gallery-tile { text-decoration: none; }
   .panel h2 { font-size: 21px; line-height: 1.12; }
   .panel-about p { font-size: 13px; line-height: 1.45; }
 
-  /* Events / Gallery: the 2×2 hero alone is 319px of a 493px box, so one more row of
-     tiles cannot fit. Show just the hero and let "See all" carry the rest — which is
-     exactly the affordance this whole pass added. The See-all count is computed from
-     the real total, so it stays correct while CSS hides the extras. */
-  .panel-gallery .gallery-grid > *:nth-child(n + 2),
-  .photo-wall .gallery-grid > *:nth-child(n + 2) { display: none; }
+  /* Events / Gallery: the hero span is already dropped for all phones above, so this tier
+     just trims the 2×2 down to a single row of two if the box is too tight. The See-all
+     count is computed from the real total, so it stays correct while CSS hides extras. */
+  .panel-gallery .gallery-grid > *:nth-child(n + 5),
+  .photo-wall .gallery-grid > *:nth-child(n + 5) { display: none; }
 
   /* Services: tighten the package cards rather than dropping their feature lists — the
      features are the whole reason the tier ladder reads as a ladder. */
