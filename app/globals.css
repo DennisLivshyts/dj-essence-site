@@ -1110,6 +1110,336 @@ a.gallery-tile { text-decoration: none; }
   text-decoration: underline;
 }
 
+/* ── PUBLIC REVIEW FORM (/review) ──────────────────────────────────────────── */
+/* Base rules live here, above the responsive blocks near the bottom of the file.
+   Putting them at the end would let them win against the mobile overrides at equal
+   specificity — the bug that made .see-all--pkg silently never appear. */
+
+/* Honeypot: off-screen rather than display:none, because some bots skip hidden
+   inputs. aria-hidden + tabIndex=-1 keep it away from people and screen readers. */
+.rev-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px; height: 1px;
+  overflow: hidden;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rev-form { max-width: 620px; }
+.rev-block {
+  border: none;
+  padding: 0;
+  margin: 0 0 28px;
+}
+.rev-block legend {
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 0 0 12px;
+}
+.rev-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rev-field { display: flex; flex-direction: column; gap: 6px; }
+.rev-field--wide { grid-column: 1 / -1; }
+.rev-field label {
+  font-family: var(--f-mono);
+  font-size: 9px; letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.rev-optional { opacity: 0.6; letter-spacing: 0.1em; }
+.rev-field input,
+.rev-field select,
+.rev-field textarea {
+  width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 15px;
+}
+.rev-field textarea { resize: vertical; line-height: 1.5; min-height: 120px; }
+.rev-field input:focus,
+.rev-field select:focus,
+.rev-field textarea:focus {
+  outline: none;
+  border-color: var(--acid);
+}
+.rev-field [data-invalid="true"] { border-color: var(--magenta); }
+.rev-hint, .rev-counter {
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  opacity: 0.75;
+}
+.rev-counter { text-align: right; }
+.rev-err {
+  color: var(--magenta);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.rev-err--fatal {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--magenta);
+  border-radius: 6px;
+}
+
+/* Star picker — real radios behind styled labels, so arrow keys and screen-reader
+   grouping work with no extra JS. Visually hidden, never display:none. */
+.rev-stars { display: flex; align-items: center; gap: 4px; }
+.rev-star-wrap { display: inline-flex; }
+.rev-stars input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 1px; height: 1px;
+}
+.rev-star {
+  cursor: pointer;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--line-strong);
+  transition: color 120ms, transform 120ms;
+  user-select: none;
+}
+.rev-star.on { color: var(--amber); }
+.rev-star:hover { transform: scale(1.12); }
+.rev-stars input[type="radio"]:focus-visible + .rev-star {
+  outline: 2px solid var(--acid);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.rev-star-label {
+  margin-left: 12px;
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber);
+  min-width: 90px;
+}
+
+.rev-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+.rev-consent[data-invalid="true"] { border-color: var(--magenta); }
+.rev-consent input { margin-top: 2px; accent-color: var(--acid); width: 16px; height: 16px; flex-shrink: 0; }
+
+.rev-foot {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.rev-note {
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  max-width: 280px;
+  line-height: 1.6;
+}
+.rev-submit {
+  background: var(--acid);
+  color: #06140c;
+  border: none;
+  border-radius: 6px;
+  padding: 15px 34px;
+  font-family: var(--f-mono);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+.rev-submit:hover { opacity: 0.85; }
+.rev-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Thanks page */
+.rev-thanks { max-width: 460px; margin: 70px auto; text-align: center; }
+.rev-thanks-mark { font-size: 46px; color: var(--amber); line-height: 1; margin-bottom: 18px; }
+.rev-thanks h1 {
+  font-family: var(--f-display);
+  font-weight: 800; letter-spacing: -0.03em;
+  font-size: clamp(28px, 4vw, 40px);
+  margin-bottom: 14px;
+}
+.rev-thanks p { color: var(--ink-dim); font-size: 14px; line-height: 1.6; }
+.rev-thanks-sub { margin-top: 26px; }
+.rev-thanks-cta {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--acid);
+  text-decoration: none;
+  border-bottom: 1px solid var(--acid);
+  padding-bottom: 3px;
+}
+
+/* ── REVIEW ADMIN (/admin/reviews) ─────────────────────────────────────────── */
+.radm-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.radm-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+  color: var(--ink-dim);
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: -1px;
+}
+.radm-tab.on { color: var(--ink); border-bottom-color: var(--acid); }
+.radm-count {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 10px;
+}
+/* Pending is the only count that should pull the eye — it's the one with work in it. */
+.radm-count.alert { background: var(--acid); border-color: var(--acid); color: #06140c; font-weight: 700; }
+.radm-refresh {
+  margin-left: auto;
+  background: none; border: none;
+  color: var(--ink-dim);
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer;
+}
+.radm-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+.radm-blurb {
+  color: var(--ink-dim);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 560px;
+  margin-bottom: 18px;
+}
+.radm-error {
+  color: var(--magenta);
+  border: 1px solid var(--magenta);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.radm-empty {
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 13px;
+}
+.radm-list { display: flex; flex-direction: column; gap: 14px; }
+.radm-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--bg-2);
+}
+.radm-card-head {
+  display: flex; align-items: baseline; gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.radm-stars { color: var(--amber); font-size: 14px; letter-spacing: 0.14em; line-height: 1; }
+/* 3 stars and under reads as a problem to act on, not a testimonial to publish. */
+.radm-stars.low { color: var(--magenta); }
+.radm-stars-off { opacity: 0.22; }
+.radm-meta { display: flex; flex-direction: column; gap: 3px; }
+.radm-meta b { font-size: 14px; font-weight: 600; }
+.radm-meta span {
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.radm-text { font-size: 14px; line-height: 1.6; margin-bottom: 14px; }
+.radm-edit textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--acid);
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.radm-edit-warn {
+  font-family: var(--f-mono);
+  font-size: 10px; line-height: 1.6;
+  color: var(--amber);
+  margin: 8px 0 12px;
+}
+.radm-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.radm-btn {
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 9px 14px;
+  color: var(--ink);
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 150ms, color 150ms;
+}
+.radm-btn:hover { border-color: var(--ink); }
+.radm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.radm-btn--go { background: var(--acid); border-color: var(--acid); color: #06140c; font-weight: 700; }
+.radm-btn--danger { background: var(--magenta); border-color: var(--magenta); color: #fff; font-weight: 700; }
+.radm-btn--icon { padding: 9px 12px; font-size: 12px; }
+.radm-foot {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 700px) {
+  .rev-grid { grid-template-columns: 1fr; }
+  .rev-foot { flex-direction: column; align-items: stretch; }
+  .rev-submit { width: 100%; }
+  .rev-note { max-width: none; }
+  .rev-star { font-size: 28px; }
+  .rev-star-label { display: none; }
+}
+
 /* Manage existing gallery photos — view, drag-to-reorder, delete (upload page) */
 .manage-photos {
   margin-top: 48px;
@@ -1196,7 +1526,12 @@ a.gallery-tile { text-decoration: none; }
   .manage-tile-overlay { opacity: 1; } /* no hover on touch — keep controls visible */
 }
 
-/* REVIEWS */
+/* REVIEWS
+   .rev-quote is deliberately NOT scoped under .panel-reviews: the same markup also
+   renders inside <Sheet>, which portals to document.body and loses every
+   ancestor-scoped rule. That exact trap has already produced two bugs on this site
+   (unstyled pickers, a grid with no `display: grid`). Only the layout container
+   below is scoped, because only it is panel-specific. */
 .panel-reviews { overflow: hidden; }
 .panel-reviews .quotes {
   display: grid;
@@ -1204,26 +1539,71 @@ a.gallery-tile { text-decoration: none; }
   gap: 20px 28px;
   margin-top: 6px;
 }
-.panel-reviews blockquote {
+.rev-quote {
   border-top: 2px solid var(--ink);
   padding-top: 12px;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.panel-reviews blockquote p {
+.rev-quote p {
   font-family: var(--f-display);
   font-size: 16px; line-height: 1.35;
   letter-spacing: -0.01em;
 }
-.panel-reviews blockquote p::before { content: "\201C"; color: var(--magenta); font-weight: 800; margin-right: 2px; }
-.panel-reviews blockquote p::after  { content: "\201D"; color: var(--magenta); font-weight: 800; margin-left: 2px; }
-.panel-reviews blockquote cite {
+.rev-quote p::before { content: "\201C"; color: var(--magenta); font-weight: 800; margin-right: 2px; }
+.rev-quote p::after  { content: "\201D"; color: var(--magenta); font-weight: 800; margin-left: 2px; }
+.rev-quote cite {
   font-style: normal;
   font-family: var(--f-mono); font-size: 10px;
   color: var(--ink-dim); letter-spacing: 0.2em;
   text-transform: uppercase;
-  display: flex; justify-content: space-between;
+  display: flex; justify-content: space-between; gap: 10px;
 }
-.panel-reviews blockquote cite b { color: var(--acid); font-weight: 500; }
+.rev-quote cite b { color: var(--acid); font-weight: 500; white-space: nowrap; }
+.rev-quote cite span { text-align: right; }
+.rev-quote-stars {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--amber);
+  line-height: 1;
+}
+.rev-quote-stars-off { opacity: 0.22; }
+
+/* Empty state. The section can't remove itself — DJEssenceApp derives the active
+   section from a uniform section height, so the count of sections is fixed. */
+.rev-empty {
+  margin-top: 14px;
+  padding: 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  max-width: 460px;
+}
+.rev-empty p { color: var(--ink-dim); font-size: 14px; line-height: 1.5; }
+.rev-empty-cta,
+.rev-leave-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--acid);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 180ms;
+}
+.rev-empty-cta:hover,
+.rev-leave-link:hover { border-bottom-color: var(--acid); }
+
+.rev-section-foot {
+  margin-top: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.rev-section-foot .rev-leave-link { margin-top: 0; }
+.rev-sheet-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
 
 /* BOOK
    Structure: a titled block per step (01 details · 02 event · 03 note · 04 package ·

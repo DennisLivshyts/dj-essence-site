@@ -346,7 +346,7 @@ export default function DJEssenceApp() {
                   {s.id === 'services' && <ServicesSection goToBook={() => goTo(BOOK_IDX)} compact />}
                   {s.id === 'gallery'  && <GallerySection compact />}
                   {s.id === 'photos'   && <PhotosSection compact />}
-                  {s.id === 'reviews'  && <ReviewsSection />}
+                  {s.id === 'reviews'  && <ReviewsSection compact />}
                   {s.id === 'book'     && <BookSection compact />}
                 </div>
               </div>
